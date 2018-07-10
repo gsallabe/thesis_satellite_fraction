@@ -5,6 +5,10 @@
 import numpy as np
 import copy
 from astropy.table import Table , Column
+from astropy.coordinates import Angle
+from astropy.coordinates import SkyCoord
+from astropy import units as u
+
 
 
 
@@ -72,3 +76,77 @@ def run_model_satellite(in_table, l):
 
     err = np.sqrt(hist_sat)/hist_cen * 100
     return(mass_center, f_sat, err)
+
+# ---------- PDR Functions ---------------------
+
+def pdr_satellite(i, table, z_lim):
+   
+    # the object we choose here is going to be a central by the way we have defined things
+    cent_gal = table[i] 
+    
+    # this was a trick that song used to make a new catalog for the other objects of interest.
+    # the utility is that we don't have to loop through the whole catalog EVERY TIME
+    cat_use = copy.deepcopy(table[(table['logm_max'] < cent_gal['logm_max'])])
+    
+    
+    # this is code Marie recommended for a more sophistiated delta z cut. Originally, I used a flat
+    # delta z cut
+    #z_lim = 0.005
+    #cvir = 5.
+    #littleh = FlatLambdaCDM(H0=70 , Om0= 0.3).H0.value/100.
+    #p_nfw = profile_nfw.NFWProfile(M=10**cent_gal['logmh_vir']*littleh,c=cvir,z=cent_gal['z_best'],mdef='200m')
+    # Assume maximum circular velocity is 1.4 times the lD velocity dispersion in the halo, 
+    # following Tormen+97.
+    # Set the Delta z cut to be 3 times the 1D dispersion. 
+    #v_lim = p_nfw.Vmax()[0]/1.4*3
+    # Convert velocity cut to redshift cut
+    #z_lim = ltu.dz_from_dv(v_lim*u.km/u.s,cent_gal['z_best'])
+    
+    
+    # find the galaxies within the delta z limit
+    dz= cat_use[np.abs(cent_gal['z_best'] - cat_use['z_best']) <= z_lim]
+    
+    if len(dz) > 0:
+        # find separation for gals within dz
+        dz['sep'] = cent_gal['coord'].separation(dz['coord']).degree 
+    for i in range(len(dz)):
+        if dz['sep'][i] <= cent_gal['r_halo']:
+            table['flag'][int(dz['index'][i])] = 1
+            #print('satellite, yo')
+
+
+def run_pdr_satellite(in_table, dz):
+
+    in_table['coord'] = SkyCoord(in_table['ra']*u.deg, in_table['dec']*u.deg) # angular coordinate of each galaxy
+
+    in_table['flag'] = np.zeros(len(in_table['logm_max'])) 
+
+    in_table['index'] = np.zeros(len(in_table['logm_max']))
+    for i in range(len(in_table['index'])):
+        in_table['index'][i] = i
+        in_table['sep'] = np.zeros(len(in_table['logm_max'])) #column of angular separations
+
+    for idx in range(len(in_table)):
+        pdr_satellite(idx, in_table, dz)
+    
+    in_table.remove_columns(['sep','coord'])
+
+    cen_table = Table(names = in_table.colnames)
+    sat_table = Table(names = in_table.colnames)
+    for i in range(len(in_table['flag'])):
+        if in_table['flag'][i] == 0:
+            cen_table.add_row(in_table[i])
+        if in_table['flag'][i] == 1:
+            sat_table.add_row(in_table[i])
+
+    hist_cen, edges_cen = np.histogram(cen_table['logm_max'], range=(11.5, 12.10), bins=6)
+
+    hist_sat, edges_sat = np.histogram(sat_table['logm_max'], range=(11.5, 12.10), bins=6)
+
+    mass_center = (edges_cen[1:] + edges_cen[:-1]) / 2
+
+    frac_sat = (hist_sat / hist_cen) * 100.0
+
+    err = (np.sqrt(hist_sat) / hist_cen) * 100.0 # poisson error bars 
+
+    return(mass_center, frac_sat, err)
