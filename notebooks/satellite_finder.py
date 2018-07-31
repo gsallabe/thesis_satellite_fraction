@@ -39,7 +39,7 @@ def model_satellite(i, table, lcut):
 
 # This function iterates over the table to find satellites. 
 # Returns: satellite fraction
-def run_model_satellite(in_table, l):
+def run_model_satellite(in_table, l, nbins):
     # creating new columns useful for the satellite finding inside of the function
     in_table['flag'] = np.zeros(len(in_table['logms_tot_mod'])) 
     in_table['sep'] = np.zeros(len(in_table['logms_tot_mod'])) #column of separations
@@ -64,17 +64,18 @@ def run_model_satellite(in_table, l):
 
 # ----------- Use histogram to calculate sat frac ---------
     # range of masses (for binning)
-    mmin = np.min(in_table['logms_tot_mod'])
-    mmax = np.max(in_table['logms_tot_mod'])
+    #mmin = np.min(in_table['logms_tot_mod'])
+    #mmax = np.max(in_table['logms_tot_mod'])
 
-    hist_cen, edges_cen = np.histogram(cen_table['logms_tot_mod'],range = [11.5,mmax], bins=8)
-    hist_sat, edges_sat = np.histogram(sat_table['logms_tot_mod'],range = [11.5,mmax], bins=8)
+    hist_all, edges_all = np.histogram(in_table['logms_tot_mod'], bins= nbins)
+    hist_cen, edges_cen = np.histogram(cen_table['logms_tot_mod'], bins= edges_all)
+    hist_sat, edges_sat = np.histogram(sat_table['logms_tot_mod'], bins= edges_all)
 
-    mass_center = (edges_cen[1:] + edges_cen[:-1]) / 2
+    mass_center = np.log10((10**edges_cen[1:] + 10**edges_cen[:-1]) / 2)
 
-    f_sat = (hist_sat / hist_cen) * 100 # satellite fraction in percent
+    f_sat = (hist_sat / hist_all) * 100 # satellite fraction in percent
 
-    err = np.sqrt(hist_sat)/hist_cen * 100
+    err = np.sqrt(hist_sat)/hist_all * 100
     return(mass_center, f_sat, err)
 
 # ---------- PDR Functions ---------------------
@@ -115,7 +116,7 @@ def pdr_satellite(i, table, z_lim):
             #print('satellite, yo')
 
 
-def run_pdr_satellite(in_table, dz):
+def run_pdr_satellite(in_table, dz, bin_edges):
 
     in_table['coord'] = SkyCoord(in_table['ra']*u.deg, in_table['dec']*u.deg) # angular coordinate of each galaxy
 
@@ -139,14 +140,16 @@ def run_pdr_satellite(in_table, dz):
         if in_table['flag'][i] == 1:
             sat_table.add_row(in_table[i])
 
-    hist_cen, edges_cen = np.histogram(cen_table['logm_max'], range=(11.5, 12.10), bins=6)
+    hist_all, edges_all = np.histogram(in_table['logm_max'], bins = bin_edges)
 
-    hist_sat, edges_sat = np.histogram(sat_table['logm_max'], range=(11.5, 12.10), bins=6)
+    hist_cen, edges_cen = np.histogram(cen_table['logm_max'], bins = edges_all)
 
-    mass_center = (edges_cen[1:] + edges_cen[:-1]) / 2
+    hist_sat, edges_sat = np.histogram(sat_table['logm_max'], bins = edges_all)
 
-    frac_sat = (hist_sat / hist_cen) * 100.0
+    mass_center = np.log10((10**(edges_cen[1:]) + 10**(edges_cen[:-1])) / 2)
 
-    err = (np.sqrt(hist_sat) / hist_cen) * 100.0 # poisson error bars 
+    frac_sat = (hist_sat / hist_all) * 100.0
+
+    err = (np.sqrt(hist_sat) / hist_all) * 100.0 # poisson error bars 
 
     return(mass_center, frac_sat, err)
