@@ -31,9 +31,10 @@ def model_satellite(i, table, lcut):
     if len(delta_l_cut) > 0:
         # find separation for gals within dz (x-y dist)
         delta_l_cut['sep'] = np.sqrt( ((delta_l_cut['x'] - cent_gal['x'])**2) + ((delta_l_cut['y'] - cent_gal['y'])**2) )
+
     for i in range(len(delta_l_cut)):
         if delta_l_cut['sep'][i] <= cent_gal['r_vir']:
-            table['flag'][int(delta_l_cut['index'][i])] = 1
+            table['flag'][int(delta_l_cut['index'][i])] = 1 #flag galaxies in rvir and dl
             #print('satellite, yo')
 
 
