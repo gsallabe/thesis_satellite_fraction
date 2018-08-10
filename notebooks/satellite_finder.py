@@ -8,34 +8,38 @@ from astropy.table import Table , Column
 from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
 from astropy import units as u
+from halotools.mock_observables import counts_in_cylinders
 
 
 
 
 # The first function just finds the satellites of a single galaxy
-def model_satellite(i, table, lcut):
+def model_satellite(i, table, lcut, use_halotools = False):
     
+    if use_halotools == False:
+        # the object we choose here is going to be a central by the way we have defined things
+        cent_gal = table[i] 
+    
+        # this was a trick that Song used to make a new catalog for the other objects of interest.
+        # the utility is that we don't have to loop through the whole catalog EVERY TIME
+        cat_use = copy.deepcopy(table[(table['logms_tot_mod'] < cent_gal['logms_tot_mod'])])
+    
+    
+    
+        # find the galaxies within the delta l limit
+        delta_l_cut = cat_use[np.abs(cent_gal['z_dist'] - cat_use['z_dist']) <= lcut] #this creates a new table
+    
+        if len(delta_l_cut) > 0:
+         # find separation for gals within dl (x-y dist)
+            delta_l_cut['sep'] = np.sqrt( ((delta_l_cut['x'] - cent_gal['x'])**2) + ((delta_l_cut['y'] - cent_gal['y'])**2) )
 
-    # the object we choose here is going to be a central by the way we have defined things
-    cent_gal = table[i] 
-    
-    # this was a trick that song used to make a new catalog for the other objects of interest.
-    # the utility is that we don't have to loop through the whole catalog EVERY TIME
-    cat_use = copy.deepcopy(table[(table['logms_tot_mod'] < cent_gal['logms_tot_mod'])])
-    
-    
-    
-    # find the galaxies within the delta z limit
-    delta_l_cut = cat_use[np.abs(cent_gal['z_dist'] - cat_use['z_dist']) <= lcut] #this creates a new table
-    
-    if len(delta_l_cut) > 0:
-        # find separation for gals within dz (x-y dist)
-        delta_l_cut['sep'] = np.sqrt( ((delta_l_cut['x'] - cent_gal['x'])**2) + ((delta_l_cut['y'] - cent_gal['y'])**2) )
-
-    for i in range(len(delta_l_cut)):
-        if delta_l_cut['sep'][i] <= cent_gal['r_vir']:
-            table['flag'][int(delta_l_cut['index'][i])] = 1 #flag galaxies in rvir and dl
-            #print('satellite, yo')
+        for i in range(len(delta_l_cut)):
+            if delta_l_cut['sep'][i] <= cent_gal['r_vir']:
+                table['flag'][int(delta_l_cut['index'][i])] = 1 #flag galaxies in rvir and dl
+                #print('satellite, yo')
+    if use_halotools == True:
+        cent_gal = table[i]
+        cat_use = copy.deepcopy(table[(table['logms_tot_mod'] < cent_gal['logms_tot_mod'])])            
 
 
 # This function iterates over the table to find satellites. 
@@ -150,6 +154,9 @@ def run_pdr_satellite(in_table, dz, bin_edges):
     mass_center = np.log10((10**(edges_cen[1:]) + 10**(edges_cen[:-1])) / 2)
 
     frac_sat = (hist_sat / hist_all) * 100.0
+    for k in range(len(frac_sat)):
+        if np.isnan(frac_sat[k]) == True:
+            frac_sat[k] = 0 
 
     err = (np.sqrt(hist_sat) / hist_all) * 100.0 # poisson error bars 
 
