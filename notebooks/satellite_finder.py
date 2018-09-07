@@ -14,14 +14,18 @@ from halotools.mock_observables import counts_in_cylinders
 
 
 # The first function just finds the satellites of a single galaxy
-def model_satellite_vir(i, table, lcut):
+def model_satellite(i, table, lcut, sort):
     
     # the object we choose here is going to be a central by the way we have defined things
     cent_gal = table[i] 
     
     # this was a trick that Song used to make a new catalog for the other objects of interest.
     # the utility is that we don't have to loop through the whole catalog EVERY TIME
-    cat_use = copy.deepcopy(table[(table['logmh_vir'] < cent_gal['logmh_vir'])])
+    # define how we want to order the catalog (ie, if we are sorting by stellar or halo mass)
+    if sort == 'vir':
+        cat_use = copy.deepcopy(table[(table['logmh_vir'] < cent_gal['logmh_vir'])])
+    if sort == 'ms':
+        cat_use = copy.deepcopy(table[(table['logms_max'] < cent_gal['logms_max'])])
 
     
     
@@ -36,20 +40,20 @@ def model_satellite_vir(i, table, lcut):
     for i in range(len(delta_l_cut)):
         if delta_l_cut['sep'][i] <= cent_gal['r_vir']:
             table['flag'][int(delta_l_cut['index'][i])] = 1 #flag galaxies in rvir and dl
-            #print('satellite, yo')
+            # print('satellite, yo')
 
 
 
 # This function iterates over the table to find satellites. 
 # Returns: satellite fraction
-def run_model_satellite_vir(in_table, l, nbins):
+def run_model_satellite(in_table, l, nbins, sort_by):
     # creating new columns useful for the satellite finding inside of the function
     in_table['flag'] = np.zeros(len(in_table['logms_max'])) 
     in_table['sep'] = np.zeros(len(in_table['logms_max'])) #column of separations
 
 
     for idx in range(len(in_table)): 
-        model_satellite_vir(idx, in_table, l)
+        model_satellite(idx, in_table, l, sort_by)
     
     in_table.remove_columns(['sep']) # remove separation column because it's useless now
 
@@ -78,71 +82,6 @@ def run_model_satellite_vir(in_table, l, nbins):
     err = np.sqrt(hist_sat)/hist_all * 100
     return(mass_center, f_sat, err)
 
-# ----------- Using stellar mass ---------------------------
-
-def model_satellite_ms(i, table, lcut):
-    
-    # the object we choose here is going to be a central by the way we have defined things
-    cent_gal = table[i] 
-    
-    # this was a trick that Song used to make a new catalog for the other objects of interest.
-    # the utility is that we don't have to loop through the whole catalog EVERY TIME
-    cat_use = copy.deepcopy(table[(table['logms_max'] < cent_gal['logms_max'])])
-
-    
-    
-    
-    # find the galaxies within the delta l limit
-    delta_l_cut = cat_use[np.abs(cent_gal['z_dist'] - cat_use['z_dist']) <= lcut] #this creates a new table
-    
-    if len(delta_l_cut) > 0:
-        # find separation for gals within dl (x-y dist)
-        delta_l_cut['sep'] = np.sqrt( ((delta_l_cut['x'] - cent_gal['x'])**2) + ((delta_l_cut['y'] - cent_gal['y'])**2) )
-
-    for i in range(len(delta_l_cut)):
-        if delta_l_cut['sep'][i] <= cent_gal['r_vir']:
-            table['flag'][int(delta_l_cut['index'][i])] = 1 #flag galaxies in rvir and dl
-            #print('satellite, yo')
-
-
-
-# This function iterates over the table to find satellites. 
-# Returns: satellite fraction
-def run_model_satellite_ms(in_table, l, nbins):
-    # creating new columns useful for the satellite finding inside of the function
-    in_table['flag'] = np.zeros(len(in_table['logms_max'])) 
-    in_table['sep'] = np.zeros(len(in_table['logms_max'])) #column of separations
-
-
-    for idx in range(len(in_table)): 
-        model_satellite_ms(idx, in_table, l)
-    
-    in_table.remove_columns(['sep']) # remove separation column because it's useless now
-
-# -------- Put the stuff in new tables ------------------
-    
-    cen_table = Table(names = in_table.colnames) #make tables of cent/satdata
-    sat_table = Table(names = in_table.colnames)
-    for i in range(len(in_table['flag'])):
-        if in_table['flag'][i] == 0:
-            cen_table.add_row(in_table[i])
-        if in_table['flag'][i] == 1:
-            sat_table.add_row(in_table[i])
-        
-    in_table.remove_columns(['flag']) # now remove flag column
-
-# ----------- Use histogram to calculate sat frac ---------
-
-    hist_all, edges_all = np.histogram(in_table['logms_max'], bins= nbins)
-    hist_cen, edges_cen = np.histogram(cen_table['logms_max'], bins= edges_all)
-    hist_sat, edges_sat = np.histogram(sat_table['logms_max'], bins= edges_all)
-
-    mass_center = np.log10((10**edges_cen[1:] + 10**edges_cen[:-1]) / 2)
-
-    f_sat = (hist_sat / hist_all) * 100 # satellite fraction in percent
-
-    err = np.sqrt(hist_sat)/hist_all * 100
-    return(mass_center, f_sat, err)
 
 # ---------- PDR Functions ---------------------
 
