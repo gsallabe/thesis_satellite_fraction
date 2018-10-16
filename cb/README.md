@@ -17,4 +17,3 @@ Fix beta and gamma in Behroozi functional form.
 1Mpc and 10Mpc for cic.
 
 Put in Rsd and some percentage have only photoz
-
