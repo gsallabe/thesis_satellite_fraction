@@ -35,7 +35,7 @@ def sim_clustering(s1, s2):
 
     return np.sum(cnts)
 
-def obs_clustering(s1, s2):
+def obs_clustering(s1, s2, test=False):
     cosmo = cosmology.setCosmology("planck18")
     res = DDrppi_mocks(
             autocorr=False,
@@ -45,7 +45,7 @@ def obs_clustering(s1, s2):
             binfile=np.linspace(0.000001, 1, num=2), # Just 1 bin out to 1Mpc
             RA1=s1["ra"],
             DEC1=s1["dec"],
-            CZ1=cosmo.comovingDistance(0., s1["z_best"]),
+            CZ1=cosmo.comovingDistance(0., s1["z_best"]), # Returns Mpc/h
             RA2=s2["ra"],
             DEC2=s2["dec"],
             CZ2=cosmo.comovingDistance(0., s2["z_best"]),
@@ -53,8 +53,27 @@ def obs_clustering(s1, s2):
     )
 
     assert res.shape == (10,)
+    if test:
+        print(test_obs_clustering(s1, s2))
+        print(np.sum(res["npairs"]))
 
     return np.sum(res["npairs"])
+
+def test_obs_clustering(s1, s2):
+    cnts = 0
+    cosmo = cosmology.setCosmology("planck18")
+    # import pdb; pdb.set_trace()
+    for s in s1:
+        z_dist = cosmo.comovingDistance(s["z_best"], s2["z_best"])
+        s2_sub = s2[np.abs(z_dist) < 10]
+        angular_dist = np.arccos(
+                np.sin(np.radians(s["dec"])) * np.sin(np.radians(s2_sub["dec"])) +
+                np.cos(np.radians(s["dec"])) * np.cos(np.radians(s2_sub["dec"])) * np.cos(np.radians(s["ra"] - s2_sub["ra"])))
+
+        xy_dist = angular_dist * cosmo.comovingDistance(0, s["z_best"])
+        s2_match = np.count_nonzero(xy_dist < 1)
+        cnts += s2_match
+    return cnts
 
 def compute_clustering(s1_s2, s1_r, n_s2, n_r):
     # https://files.slack.com/files-pri/T5WPLGLAF-FD1NHDZ1R/image.png
