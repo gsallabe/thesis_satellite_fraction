@@ -6,19 +6,20 @@ from colossus.cosmology import cosmology
 
 
 def sim_clustering(s1, s2, sim_size):
-    cnts = counts_in_cylinders(
-            s1[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),
-            s2[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),
-            proj_search_radius=1,
-            cylinder_half_length=10,
-            period=sim_size,
-    )
+    # We really should be taking into account RSD here
+    # cnts = counts_in_cylinders(
+    #         s1[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),
+    #         s2[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),
+    #         proj_search_radius=1,
+    #         cylinder_half_length=10,
+    #         period=sim_size,
+    # )
+    # pet_z = (s1["halo_z"] + np.random.normal(0, 5, len(s1))) % 400
 
-    # Just make sure that corrfunc is being used correctly
-    test = DDrppi(
+    res = DDrppi(
             autocorr=False,
             nthreads=1,
-            pimax=10,
+            pimax=100,
             binfile=np.linspace(0.000001, 1, num=2), # Just 1 bin out to 1Mpc
             X1=s1["halo_x"],
             Y1=s1["halo_y"],
@@ -29,9 +30,9 @@ def sim_clustering(s1, s2, sim_size):
             Y2=s2["halo_y"],
             Z2=s2["halo_z"],
     )
-    assert np.sum(test["npairs"]) == np.sum(cnts)
+    # assert np.sum(test["npairs"]) == np.sum(cnts)
 
-    return np.sum(cnts)
+    return res
 
 def obs_clustering(s1, s2, test=False):
     cosmo = cosmology.setCosmology("planck18")
@@ -39,7 +40,7 @@ def obs_clustering(s1, s2, test=False):
             autocorr=False,
             cosmology=1, # This doesn't matter
             nthreads=1, # This is ignored because we didn't compile with it
-            pimax=10,
+            pimax=100,
             binfile=np.linspace(0.000001, 1, num=2), # Just 1 bin out to 1Mpc/h
             RA1=s1["ra"],
             DEC1=s1["dec"],
@@ -50,12 +51,11 @@ def obs_clustering(s1, s2, test=False):
             is_comoving_dist=True,
     )
 
-    assert res.shape == (10,)
     if test:
         print(test_obs_clustering(s1, s2))
         print(np.sum(res["npairs"]))
 
-    return np.sum(res["npairs"])
+    return res
 
 def test_obs_clustering(s1, s2):
     cnts = 0

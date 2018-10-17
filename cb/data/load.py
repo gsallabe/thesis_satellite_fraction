@@ -1,6 +1,7 @@
 import numpy as np
 from astropy.io import fits
 import numpy.lib.recfunctions as rfn
+import scipy.interpolate
 
 
 local_base = "/home/christopher/research/satellite_fraction/data/"
@@ -26,20 +27,24 @@ def load_gals():
         "ra", "dec", "z_best", "logm_max",
     ]]
 
-def load_randoms():
+def load_randoms(s_z):
     randoms = np.load(local_base + "s16a_random_500k.npy")
+
+
+    # We need to ensure that the randoms have the same redshift distribution as the sample
+    # They are currently a uniform random [0, 1)
+    hist, edges = np.histogram(s_z, bins=100)
+    cdf = np.append(0, np.cumsum(hist))
+    cdf = cdf / cdf[-1]
+    f = scipy.interpolate.interp1d(cdf, edges)
+    randoms["z"] = f(randoms["z"])
+
     return rfn.rename_fields(randoms, {"z": "z_best"})
 
-def load_smdpl(ignore_exception=False):
-    if sim_size != 400:
-        msg = "Remember to change sim size to 400"
-        if ignore_exception:
-            print(msg)
-        else:
-            raise Exception(msg)
+def load_smdpl():
     f = np.load("/home/christopher/Data/data/universe_machine/sfr_catalog_insitu_exsitu_0.712400_final_wssfr_wv.npz")
     sim_data = np.append(f["centrals"], f["satellites"])
-    sim_data = sim_data[sim_data["m"] > 10**12.3]
+    sim_data = sim_data[sim_data["m"] > 10**12.2]
 
     # Remember that things are outside of the box...
     for col in "xyz":
@@ -54,17 +59,10 @@ def load_smdpl(ignore_exception=False):
             "m": "halo_mvir",
     }), 400
 
-def load_mdpl(ignore_exception=False):
-    if sim_size != 1000:
-        msg = "Remember to change sim size to 1000"
-        if ignore_exception:
-            print(msg)
-        else:
-            raise Exception(msg)
-
+def load_mdpl():
     sim_data = np.load("/home/christopher/Data/data/MDPL/hlist_0.73330_vpeak3_mvir_gt_12_wxyz.npy")
 
     # We work in untils of Msun, not Msun/h
     sim_data["halo_mvir"] = sim_data["halo_mvir"] / 0.6777
 
-    return sim_data[np.log10(sim_data["halo_mvir"]) > 12.3], 1000
+    return sim_data[np.log10(sim_data["halo_mvir"]) > 12.2], 1000

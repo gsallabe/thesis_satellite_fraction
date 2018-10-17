@@ -1,7 +1,6 @@
 import numpy as np
 import scipy.interpolate
 import matplotlib.pyplot as plt
-from colossus.cosmology import cosmology
 
 import smhm_fit
 

@@ -24,7 +24,7 @@ def single_step(
         params, # The position in parameter space
         sim_data, # The halos
         obs_smf, # HSC SMF
-        sim_size,
+        sim_size, # Length of each side in the sim
 ):
     log_stellar_masses = get_sm_for_sim(sim_data, params[:3], params[3:])
 
@@ -34,8 +34,8 @@ def single_step(
 
     return compute_likelihood(obs_smf, sim_smf)
 
-def single_step_avg(params, sim_data, obs_smf, n):
+def single_step_avg(params, sim_data, obs_smf, sim_size, n):
     print(params)
-    chi2 = np.mean([single_step(params, sim_data, obs_smf) for i in range(n)])
+    chi2 = np.mean([single_step(params, sim_data, obs_smf, sim_size) for i in range(n)])
     print(chi2)
     return chi2

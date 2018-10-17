@@ -3,9 +3,8 @@ import numpy as np
 
 from get_sm_for_sim import get_sm_for_sim, get_smf
 import likelihood as l
-from data import sim_size
 
-def plot_smfs(sim_data, obs_smf, b_params, s_params):
+def plot_smfs(sim_data, obs_smf, b_params, s_params, sim_size):
     assert len(b_params) == 3 and len(s_params) == 2
     # import pdb; pdb.set_trace()
     log_stellar_masses = get_sm_for_sim(sim_data, b_params, s_params)
