@@ -4,7 +4,6 @@ from astropy.table import Table
 import numpy.lib.recfunctions as rfn
 
 
-
 local_base = "/home/christopher/research/satellite_fraction/data/"
 
 def load_smf():
