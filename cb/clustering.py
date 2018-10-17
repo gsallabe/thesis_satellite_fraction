@@ -4,10 +4,8 @@ from Corrfunc.mocks.DDrppi_mocks import DDrppi_mocks
 from Corrfunc.theory.DDrppi import DDrppi
 from colossus.cosmology import cosmology
 
-from get_obs_params import sim_size
 
-
-def sim_clustering(s1, s2):
+def sim_clustering(s1, s2, sim_size):
     cnts = counts_in_cylinders(
             s1[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),
             s2[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),
@@ -42,7 +40,7 @@ def obs_clustering(s1, s2, test=False):
             cosmology=1, # This doesn't matter
             nthreads=1, # This is ignored because we didn't compile with it
             pimax=10,
-            binfile=np.linspace(0.000001, 1, num=2), # Just 1 bin out to 1Mpc
+            binfile=np.linspace(0.000001, 1, num=2), # Just 1 bin out to 1Mpc/h
             RA1=s1["ra"],
             DEC1=s1["dec"],
             CZ1=cosmo.comovingDistance(0., s1["z_best"]), # Returns Mpc/h
@@ -62,7 +60,6 @@ def obs_clustering(s1, s2, test=False):
 def test_obs_clustering(s1, s2):
     cnts = 0
     cosmo = cosmology.setCosmology("planck18")
-    # import pdb; pdb.set_trace()
     for s in s1:
         z_dist = cosmo.comovingDistance(s["z_best"], s2["z_best"])
         s2_sub = s2[np.abs(z_dist) < 10]

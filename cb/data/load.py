@@ -1,6 +1,5 @@
 import numpy as np
 from astropy.io import fits
-from astropy.table import Table
 import numpy.lib.recfunctions as rfn
 
 
@@ -8,6 +7,14 @@ local_base = "/home/christopher/research/satellite_fraction/data/"
 
 def load_smf():
     smf = np.load(local_base + "s16a_wide2_massive_smf_mmax_11.6.npy")
+
+    # This is in units of count per mpc^3 per mass
+    # We want to use mpc/h throughout.
+    # 1 mpc ~ 1*h mpc/h
+
+    # So basically multiply by 1/h cubed. This is the same as dividing by h^3
+    for col in ["smf", "smf_err", "smf_low", "smf_upp"]:
+        smf[col] = smf[col] / 0.7**3 # Song just uses 0.7
     return smf
 
 
@@ -23,29 +30,41 @@ def load_randoms():
     randoms = np.load(local_base + "s16a_random_500k.npy")
     return rfn.rename_fields(randoms, {"z": "z_best"})
 
-sim_size = 400
-
-def load_smdpl():
-    print("Remember to change sim size to 400")
+def load_smdpl(ignore_exception=False):
+    if sim_size != 400:
+        msg = "Remember to change sim size to 400"
+        if ignore_exception:
+            print(msg)
+        else:
+            raise Exception(msg)
     f = np.load("/home/christopher/Data/data/universe_machine/sfr_catalog_insitu_exsitu_0.712400_final_wssfr_wv.npz")
     sim_data = np.append(f["centrals"], f["satellites"])
-    sim_data = sim_data[sim_data["mp"] > 1e12]
+    sim_data = sim_data[sim_data["m"] > 10**12.3]
 
     # Remember that things are outside of the box...
     for col in "xyz":
         sim_data[col] %= 400
+
 
     # Make this look like MDPL
     return rfn.rename_fields(sim_data, {
             "x": "halo_x",
             "y": "halo_y",
             "z": "halo_z",
-            "mp": "halo_mvir", # This is an open question - use this or m?
-    })
+            "m": "halo_mvir",
+    }), 400
 
-def load_mdpl():
-    print("Remember to change sim size to 1000")
-    # dtype([('halo_id', '<i8'), ('halo_upid', '<i8'), ('halo_mvir', '<f8'), ('halo_Vpeak', '<f8'), ('halo_Acc_Rate_2*Tdyn', '<f8'), ('halo_x', '<f8'), ('halo_y', '<f8'), ('halo_z', '<f8')])
+def load_mdpl(ignore_exception=False):
+    if sim_size != 1000:
+        msg = "Remember to change sim size to 1000"
+        if ignore_exception:
+            print(msg)
+        else:
+            raise Exception(msg)
 
     sim_data = np.load("/home/christopher/Data/data/MDPL/hlist_0.73330_vpeak3_mvir_gt_12_wxyz.npy")
-    return sim_data
+
+    # We work in untils of Msun, not Msun/h
+    sim_data["halo_mvir"] = sim_data["halo_mvir"] / 0.6777
+
+    return sim_data[np.log10(sim_data["halo_mvir"]) > 12.3], 1000

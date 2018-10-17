@@ -3,8 +3,6 @@
 import numpy as np
 from get_sm_for_sim import get_sm_for_sim, get_smf
 
-from get_obs_params import sim_size
-
 def compute_likelihood(obs_smf, sim_smf):
     assert len(obs_smf) == len(sim_smf)
 
@@ -26,6 +24,7 @@ def single_step(
         params, # The position in parameter space
         sim_data, # The halos
         obs_smf, # HSC SMF
+        sim_size,
 ):
     log_stellar_masses = get_sm_for_sim(sim_data, params[:3], params[3:])
 

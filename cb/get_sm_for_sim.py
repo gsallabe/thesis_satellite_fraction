@@ -3,8 +3,6 @@ import scipy.interpolate
 import matplotlib.pyplot as plt
 from colossus.cosmology import cosmology
 
-import sys
-sys.path.insert(0, "/home/christopher/research/hsc_um2/cb") # The fitting code lives here
 import smhm_fit
 
 # Given the b_params for the behroozi functional form, and the halos in the sim
@@ -74,11 +72,7 @@ def get_smf(log_stellar_masses, bins, sim_volume):
     bin_widths = np.diff(bins) # In dex
     assert np.allclose(bin_widths, bin_widths[0])
 
-    # Sim volume is in MPC/h cubed
-    # We want the SMF in MPC
-    cosmo = cosmology.setCosmology("planck18")
-
-    number_density = counts / ((cosmo.H0/100)**3 * sim_volume) / bin_widths[0]
+    number_density = counts / sim_volume / bin_widths[0]
 
     return number_density
 
