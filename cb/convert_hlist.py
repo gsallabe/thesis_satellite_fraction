@@ -5,12 +5,13 @@ import halotools.sim_manager
 hlist_cols = {
     "id": (1, "int32"),
     "Mpeak": (60, "float64"),
-    "x": (17, "float32"),
-    "y": (18, "float32"),
-    "z": (19, "float32"),
-    "vx": (20, "float32"),
-    "vy": (21, "float32"),
-    "vz": (22, "float32"),
+    "Vmax@Mpeak": (74, "float64"),
+    "x": (17, "float64"),
+    "y": (18, "float64"),
+    "z": (19, "float64"),
+    "vx": (20, "float64"),
+    "vy": (21, "float64"),
+    "vz": (22, "float64"),
 }
 
 hlist_min_cuts = {
@@ -25,7 +26,7 @@ def main():
             row_cut_min_dict=hlist_min_cuts,
     )
     reduced_catalog = hlist_reader.read_ascii()
-    np.save(data_base + "hlist_0.73330.cut", reduced_catalog)
+    np.save(data_base + "hlist_0.73330.cut.2", reduced_catalog)
 
 
 
