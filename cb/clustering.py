@@ -1,9 +1,82 @@
 import numpy as np
 import astropy.cosmology
 import halotools.mock_observables
+
 from Corrfunc.mocks.DDrppi_mocks import DDrppi_mocks
 from Corrfunc.theory.DDrppi import DDrppi
+from Corrfunc.utils import convert_3d_counts_to_cf
+
 from colossus.cosmology import cosmology
+
+import data as d
+from get_sm_for_sim import get_sm_for_sim
+
+def compute_sim_clustering(sim_data, sim_size, b_params, s_params, cen_cuts, sat_cuts, for_plot=False):
+    log_stellar_masses = get_sm_for_sim(sim_data, b_params, s_params)
+
+    s1 = sim_data[
+        (log_stellar_masses > cen_cuts[0]) & (log_stellar_masses < cen_cuts[1])
+    ]
+    s2 = sim_data[
+            (log_stellar_masses > sat_cuts[0]) & (log_stellar_masses < sat_cuts[1])
+    ]
+    random_len = max(len(s1), len(s2)) * 10
+    print(random_len)
+
+    r1 = sim_size * np.random.random(size=(random_len, 3))
+    r1 = r1.ravel().view([("halo_x", np.float64), ("halo_y", np.float64), ("halo_z", np.float64)])
+
+    r2 = sim_size * np.random.random(size=(random_len, 3))
+    r2 = r2.ravel().view([("halo_x", np.float64), ("halo_y", np.float64), ("halo_z", np.float64)])
+
+    dd = sim_clustering(s1, s2, sim_size, applyRSD1=True, applyRSD2=True)
+    dr = sim_clustering(s1, r2, sim_size, applyRSD1=True)
+    rd = sim_clustering(r1, s2, sim_size, applyRSD2=True)
+    rr = sim_clustering(r1, r2, sim_size)
+
+    sim_clust_cf = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), dd, dr, rd, rr)
+    if for_plot:
+        return np.mean(sim_clust_cf), sim_clust_cf
+    else:
+        return np.mean(sim_clust_cf)
+
+
+# Given the galaxys (location, mass) and the mass cuts for the centrals and satellites
+# Compute clustering (for some hardcoded definition of clustering)
+def compute_hsc_clustering(gals, cen_cuts, sat_cuts, for_plot=False):
+    s1 = gals[
+        (gals["logm_max"] > cen_cuts[0]) & (gals["logm_max"] < cen_cuts[1])
+    ]
+    s2 = gals[
+        (gals["logm_max"] > sat_cuts[0]) & (gals["logm_max"] < sat_cuts[1])
+    ]
+
+    # This should make the poisson error on the randoms negligible while keeping performance
+    # pretty fast
+    random_len = max(len(s1), len(s2)) * 10
+
+    # Load randoms ensuring that their z distibution is the same as our samples
+    r1 = d.load_randoms(s1["z_best"])
+    r2 = d.load_randoms(s2["z_best"])
+    assert random_len < len(r1)
+
+    # Split randoms into two parts
+    r_div = np.arange(len(r1))[:random_len]
+    np.random.shuffle(r_div)
+    r1 = r1[r_div[:len(r_div) // 2]]
+    r2 = r2[r_div[len(r_div) // 2:]]
+    assert len(r1) == len(r2)
+
+    dd = obs_clustering(s1, s2)
+    dr = obs_clustering(s1, r2)
+    rd = obs_clustering(r1, s2)
+    rr = obs_clustering(r1, r2)
+
+    obs_clust_cf = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), dd, dr, rd, rr)
+    if for_plot:
+        return np.mean(obs_clust_cf), obs_clust_cf
+    else:
+        return np.mean(obs_clust_cf)
 
 
 def sim_clustering(s1, s2, sim_size, applyRSD1=False, applyRSD2=False):
