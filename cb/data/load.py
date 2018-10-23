@@ -9,9 +9,9 @@ local_base = "/home/christopher/research/satellite_fraction/data/"
 def load_smf():
     smf = np.load(local_base + "s16a_wide2_massive_smf_mmax_11.6.npy")
 
-    # This is in units of count per mpc^3 per mass
+    # This starts in units of count per mpc^3 per msun
     # We want to use mpc/h throughout.
-    # 1 mpc ~ 1*h mpc/h
+    # 1 mpc ~ 1*0.7 mpc/h
 
     # So basically multiply by 1/h cubed. This is the same as dividing by h^3
     for col in ["smf", "smf_err", "smf_low", "smf_upp"]:
@@ -19,7 +19,7 @@ def load_smf():
     return smf
 
 
-def load_gals():
+def load_hsc_gals():
     gals = fits.open(local_base + "s16a_massive_logm100_11.45_z_0.25_0.45_all.fits")
     recarr = np.array(gals[1].data)
     structarr = recarr.view(recarr.dtype.fields, np.ndarray)
@@ -29,7 +29,6 @@ def load_gals():
 
 def load_randoms(s_z):
     randoms = np.load(local_base + "s16a_random_500k.npy")
-
 
     # We need to ensure that the randoms have the same redshift distribution as the sample
     # They are currently a uniform random [0, 1)
@@ -59,10 +58,26 @@ def load_smdpl():
             "m": "halo_mvir",
     }), 400
 
-def load_mdpl():
+def old_load_mdpl():
     sim_data = np.load("/home/christopher/Data/data/MDPL/hlist_0.73330_vpeak3_mvir_gt_12_wxyz.npy")
 
     # We work in untils of Msun, not Msun/h
+
+    # This is 1.5         = if this is 1
+    sim_data["halo_mvir"] = sim_data["halo_mvir"] / 0.6777
+
+    return sim_data[np.log10(sim_data["halo_mvir"]) > 12.2], 1000
+
+def load_mdpl():
+    sim_data = np.load("/home/christopher/Data/data/MDPL/hlist_0.73330.cut.f8.npy")
+
+    sim_data = rfn.rename_fields(sim_data, {
+            "Mpeak": "halo_mvir",
+            "x": "halo_x",
+            "y": "halo_y",
+            "z": "halo_z",
+    })
+
     sim_data["halo_mvir"] = sim_data["halo_mvir"] / 0.6777
 
     return sim_data[np.log10(sim_data["halo_mvir"]) > 12.2], 1000

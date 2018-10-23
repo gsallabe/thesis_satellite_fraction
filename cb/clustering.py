@@ -1,13 +1,13 @@
 import numpy as np
-from halotools.mock_observables import counts_in_cylinders
+import astropy.cosmology
+import halotools.mock_observables
 from Corrfunc.mocks.DDrppi_mocks import DDrppi_mocks
 from Corrfunc.theory.DDrppi import DDrppi
 from colossus.cosmology import cosmology
 
 
-def sim_clustering(s1, s2, sim_size):
-    # We really should be taking into account RSD here
-    # cnts = counts_in_cylinders(
+def sim_clustering(s1, s2, sim_size, applyRSD1=False, applyRSD2=False):
+    # cnts = halotools.mock_observables.counts_in_cylinders(
     #         s1[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),
     #         s2[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),
     #         proj_search_radius=1,
@@ -15,22 +15,42 @@ def sim_clustering(s1, s2, sim_size):
     #         period=sim_size,
     # )
     # pet_z = (s1["halo_z"] + np.random.normal(0, 5, len(s1))) % 400
+    # assert np.sum(test["npairs"]) == np.sum(cnts)
+
+    z1 = s1["halo_z"]
+    if applyRSD1:
+        z1 = halotools.mock_observables.apply_zspace_distortion(
+                s1["halo_z"],
+                s1["vz"],
+                0.35,
+                astropy.cosmology.Planck15,
+                sim_size,
+        )
+
+    z2 = s2["halo_z"]
+    if applyRSD2:
+        z2 = halotools.mock_observables.apply_zspace_distortion(
+                s2["halo_z"],
+                s2["vz"],
+                0.35,
+                astropy.cosmology.Planck15,
+                sim_size,
+        )
 
     res = DDrppi(
             autocorr=False,
             nthreads=1,
-            pimax=100,
+            pimax=10,
             binfile=np.linspace(0.000001, 1, num=2), # Just 1 bin out to 1Mpc
             X1=s1["halo_x"],
             Y1=s1["halo_y"],
-            Z1=s1["halo_z"],
+            Z1=z1,
             periodic=True,
             boxsize=sim_size,
             X2=s2["halo_x"],
             Y2=s2["halo_y"],
-            Z2=s2["halo_z"],
+            Z2=z2,
     )
-    # assert np.sum(test["npairs"]) == np.sum(cnts)
 
     return res
 
@@ -40,7 +60,7 @@ def obs_clustering(s1, s2, test=False):
             autocorr=False,
             cosmology=1, # This doesn't matter
             nthreads=1, # This is ignored because we didn't compile with it
-            pimax=100,
+            pimax=10,
             binfile=np.linspace(0.000001, 1, num=2), # Just 1 bin out to 1Mpc/h
             RA1=s1["ra"],
             DEC1=s1["dec"],
