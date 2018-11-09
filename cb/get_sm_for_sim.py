@@ -6,32 +6,21 @@ import smhm_fit
 
 # Given the b_params for the behroozi functional form, and the halos in the sim
 # find the SM for each halo
-def get_sm_for_sim(sim_data, b_params, s_params, sanity=False):
-    assert len(b_params) == 3 and len(s_params) == 2
-    b_bounds = [(10, 15), (8, 14), (0.1, 3)]
-    for i in range(len(b_params)):
-        if not b_bounds[i][0] < b_params[i] < b_bounds[i][1]:
-            return np.zeros_like(sim_data["halo_mvir"])
+def get_sm_for_sim(sim_data, b_params, s_params, x_field, sanity=False):
+    assert len(b_params) == 5 and len(s_params) == 2
 
-    # default b_params [10**12.52, 10**10.91, 0.45, 0.6, 1.83]
-    # from a paper by Alexie
-    b_params = np.append(b_params[:2], np.array([0.45, b_params[2], 1.83]))
-    for i in range(2):
-        b_params[i] = 10**b_params[i]
-
-    # default scatter params - we want ~0.3 at 13Mvir and 0.18 at 15Mvir
-    # scatter = -0.06 * Mvir + 1.08
-
-    log_halo_masses = np.log10(sim_data["halo_mvir"])
+    log_halo_masses = np.log10(sim_data[x_field])
     min_mvir = np.min(log_halo_masses)
     max_mvir = np.max(log_halo_masses)
 
-    sample_halo_masses = np.linspace(min_mvir, max_mvir, num=20)
+    sample_halo_masses = np.linspace(min_mvir, max_mvir, num=12)
 
     try:
         sample_stellar_masses = smhm_fit.f_shmr(
             sample_halo_masses,
-            *b_params
+            10**b_params[0],
+            10**b_params[1],
+            *b_params[2:],
         )
     except Exception as e:
         if e.args[0].startswith("Failure to invert"):
@@ -76,7 +65,7 @@ def get_smf(log_stellar_masses, bins, sim_volume):
     return number_density
 
 
-def _sanity_get_sm_for_sim(sim_data, b_params, s_params):
+def _sanity_get_sm_for_sim(sim_data, b_params, s_params, x_field):
     log_stellar_masses, sample_halo_masses, sample_stellar_masses, f_mvir_to_sm, min_mvir, max_mvir = get_sm_for_sim(sim_data, b_params, s_params, sanity=True)
 
     # Check that the samples + interpolation look sane
@@ -97,4 +86,4 @@ def _sanity_get_sm_for_sim(sim_data, b_params, s_params):
 
     # And just check the distribution
     _, ax = plt.subplots()
-    ax.scatter(np.log10(sim_data["halo_mvir"][::100]), log_stellar_masses[::100], s=0.1)
+    ax.scatter(np.log10(sim_data[x_field][::100]), log_stellar_masses[::100], s=0.1)

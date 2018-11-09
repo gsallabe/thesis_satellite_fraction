@@ -2,40 +2,56 @@
 
 import numpy as np
 from get_sm_for_sim import get_sm_for_sim, get_smf
+import clustering as c
 
-def compute_likelihood(obs_smf, sim_smf):
+def compute_smf_chi2(obs_smf, sim_smf):
     assert len(obs_smf) == len(sim_smf)
 
-    ln_like = 0
+    chi2 = 0
     for i in range(len(obs_smf)):
         if sim_smf[i] < obs_smf["smf"][i]:
             err = np.abs(obs_smf["smf"][i] - obs_smf["smf_low"][i])
         else:
             err = np.abs(obs_smf["smf"][i] - obs_smf["smf_upp"][i])
 
-        ln_like += np.power(
+        chi2 += np.power(
                 (obs_smf["smf"][i] - sim_smf[i])/err,
                 2
         )
-    return ln_like
+    return chi2
 
-
-def single_step(
-        params, # The position in parameter space
-        sim_data, # The halos
-        obs_smf, # HSC SMF
-        sim_size, # Length of each side in the sim
+def compute_chi2(
+        params,         # The position in parameter space
+        sim_data,       # The halos
+        obs_smf,        # HSC SMF
+        obs_clust,      # HSC clustering
+        sim_size,       # Length of each side in the sim
+        cen_cuts,
+        sat_cuts,       # The cuts in SM for the clustering
+        x_field,
 ):
-    log_stellar_masses = get_sm_for_sim(sim_data, params[:3], params[3:])
+    log_stellar_masses = get_sm_for_sim(sim_data, params[:5], params[5:], x_field)
 
-    smf_bins = np.append(obs_smf["logm_0"], obs_smf["logm_1"][-1])
+    # sim_clust, sim_clust_err = c.compute_sim_clustering(
+    #         sim_data, sim_size, log_stellar_masses, cen_cuts, sat_cuts)
+    # print(sim_clust, sim_clust_err)
+    # clust_chi2 = np.power((sim_clust - obs_clust) / sim_clust_err, 2)
+    clust_chi2 = 0
 
-    sim_smf = get_smf(log_stellar_masses, smf_bins, sim_size**3)
+    sim_smf = get_smf(
+            log_stellar_masses,
+            np.append(obs_smf["logm_0"], obs_smf["logm_1"][-1]),
+            sim_size**3,
+    )
 
-    return compute_likelihood(obs_smf, sim_smf)
+    return compute_smf_chi2(obs_smf, sim_smf) + clust_chi2
 
-def single_step_avg(params, sim_data, obs_smf, sim_size, n):
+def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, cen_cuts, sat_cuts, x_field, n):
     print(params)
-    chi2 = np.mean([single_step(params, sim_data, obs_smf, sim_size) for i in range(n)])
+
+    chi2 = np.mean([compute_chi2(
+        params, sim_data, obs_smf, obs_clust, sim_size, cen_cuts, sat_cuts, x_field,
+    ) for i in range(n)])
+
     print(chi2)
     return chi2

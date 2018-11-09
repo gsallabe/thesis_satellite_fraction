@@ -4,10 +4,8 @@ import numpy as np
 from get_sm_for_sim import get_sm_for_sim, get_smf
 import likelihood as l
 
-def plot_smfs(sim_data, obs_smf, b_params, s_params, sim_size):
-    assert len(b_params) == 3 and len(s_params) == 2
-    # import pdb; pdb.set_trace()
-    log_stellar_masses = get_sm_for_sim(sim_data, b_params, s_params)
+def plot_smfs(sim_data, obs_smf, b_params, s_params, sim_size, x_field):
+    log_stellar_masses = get_sm_for_sim(sim_data, b_params, s_params, x_field)
 
     smf_bins = np.append(obs_smf["logm_0"], obs_smf["logm_1"][-1])
     smf_centers = obs_smf["logm_mean"]
@@ -24,7 +22,7 @@ def plot_smfs(sim_data, obs_smf, b_params, s_params, sim_size):
     ax.plot(smf_centers, sim_smf, label="Sim")
     ax.legend()
 
-    print(l.compute_likelihood(obs_smf, sim_smf))
+    print(l.compute_smf_chi2(obs_smf, sim_smf))
     return ax
 
 def plot_scatter(s_params):

@@ -69,7 +69,7 @@ def old_load_mdpl():
     return sim_data[np.log10(sim_data["halo_mvir"]) > 12.2], 1000
 
 def load_mdpl():
-    sim_data = np.load("/home/christopher/Data/data/MDPL/hlist_0.73330.cut.f8.npy")
+    sim_data = np.load("/home/christopher/Data/data/MDPL/hlist_0.73330.cut.2.npy")
 
     sim_data = rfn.rename_fields(sim_data, {
             "Mpeak": "halo_mvir",
