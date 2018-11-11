@@ -15,7 +15,7 @@ def compute_smf_chi2(obs_smf, sim_smf):
             err = np.abs(obs_smf["smf"][i] - obs_smf["smf_upp"][i])
 
         chi2 += np.power(
-                (obs_smf["smf"][i] - sim_smf[i])/err,
+                (obs_smf["smf"][i] - sim_smf[i]) / err,
                 2
         )
     return chi2
@@ -25,6 +25,7 @@ def compute_chi2(
         sim_data,       # The halos
         obs_smf,        # HSC SMF
         obs_clust,      # HSC clustering
+        obs_clust_err,
         sim_size,       # Length of each side in the sim
         cen_cuts,
         sat_cuts,       # The cuts in SM for the clustering
@@ -32,11 +33,12 @@ def compute_chi2(
 ):
     log_stellar_masses = get_sm_for_sim(sim_data, params[:5], params[5:], x_field)
 
-    # sim_clust, sim_clust_err = c.compute_sim_clustering(
-    #         sim_data, sim_size, log_stellar_masses, cen_cuts, sat_cuts)
-    # print(sim_clust, sim_clust_err)
-    # clust_chi2 = np.power((sim_clust - obs_clust) / sim_clust_err, 2)
-    clust_chi2 = 0
+    sim_clust, sim_clust_err = c.compute_sim_clustering(
+             sim_data, sim_size, log_stellar_masses, cen_cuts, sat_cuts)
+
+    clust_delta = np.abs(sim_clust - obs_clust)
+    clust_delta_err = np.sqrt(sim_clust_err**2 + obs_clust_err**2)
+    clust_chi2 = np.power(clust_delta / clust_delta_err, 2)
 
     sim_smf = get_smf(
             log_stellar_masses,
@@ -46,11 +48,11 @@ def compute_chi2(
 
     return compute_smf_chi2(obs_smf, sim_smf) + clust_chi2
 
-def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, cen_cuts, sat_cuts, x_field, n):
+def compute_chi2_n(params, sim_data, obs_smf, obs_clust, obs_clust_err, sim_size, cen_cuts, sat_cuts, x_field, n):
     print(params)
 
     chi2 = np.mean([compute_chi2(
-        params, sim_data, obs_smf, obs_clust, sim_size, cen_cuts, sat_cuts, x_field,
+        params, sim_data, obs_smf, obs_clust, obs_clust_err, sim_size, cen_cuts, sat_cuts, x_field,
     ) for i in range(n)])
 
     print(chi2)
