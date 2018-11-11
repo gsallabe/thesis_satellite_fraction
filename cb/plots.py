@@ -22,7 +22,6 @@ def plot_smfs(sim_data, obs_smf, b_params, s_params, sim_size, x_field):
     ax.plot(smf_centers, sim_smf, label="Sim")
     ax.legend()
 
-    print(l.compute_smf_chi2(obs_smf, sim_smf))
     return ax
 
 def plot_scatter(s_params):
