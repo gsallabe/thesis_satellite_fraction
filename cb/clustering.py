@@ -9,17 +9,6 @@ from Corrfunc.utils import convert_3d_counts_to_cf
 from colossus.cosmology import cosmology
 
 import data as d
-from get_sm_for_sim import get_sm_for_sim
-
-# We get dd along the pi direction. Square into a single bin
-def squash(dd):
-    dd[0]["npairs"] = np.sum(dd["npairs"])
-    return dd[:1]
-
-# Approximate dd error
-def add_poisson_err(dd):
-    dd[0]["npairs"] += np.sqrt(dd[0]["npairs"])
-    return dd
 
 def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_cuts, sat_cuts):
     s1 = sim_data[
@@ -28,8 +17,8 @@ def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_cuts, sat
     s2 = sim_data[
             (log_stellar_masses > sat_cuts[0]) & (log_stellar_masses < sat_cuts[1])
     ]
-    random_len = max(len(s1), len(s2)) * 10
-    print("Randoms len is 10x the data {}".format(random_len))
+    # Compromise between accuracy and run time
+    random_len = max(len(s1), len(s2)) * 30
 
     r1 = sim_size * np.random.random(size=(random_len, 3))
     r1 = r1.ravel().view([("halo_x", np.float64), ("halo_y", np.float64), ("halo_z", np.float64)])
@@ -37,65 +26,26 @@ def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_cuts, sat
     r2 = sim_size * np.random.random(size=(random_len, 3))
     r2 = r2.ravel().view([("halo_x", np.float64), ("halo_y", np.float64), ("halo_z", np.float64)])
 
-    dd = squash(sim_clustering(s1, s2, sim_size, applyRSD1=True, applyRSD2=True))
-    dr = squash(sim_clustering(s1, r2, sim_size, applyRSD1=True))
-    rd = squash(sim_clustering(r1, s2, sim_size, applyRSD2=True))
-    rr = squash(sim_clustering(r1, r2, sim_size))
+    dd = _squash(sim_clustering(s1, s2, sim_size, applyRSD1=True, applyRSD2=True))
+    dr = _squash(sim_clustering(s1, r2, sim_size, applyRSD1=True))
+    rd = _squash(sim_clustering(r1, s2, sim_size, applyRSD2=True))
+    rr = _squash(sim_clustering(r1, r2, sim_size))
 
-    sim_clust_cf = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), dd, dr, rd, rr)
-    dd, dr, rd, rr = add_poisson_err(dd), add_poisson_err(dr), add_poisson_err(rd), add_poisson_err(rr),
-    sim_clust_w_err = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), dd, dr, rd, rr)
-    assert len(sim_clust_cf) == 1, len(sim_clust_cf)
+    print(dd["npairs"], dr["npairs"], rd["npairs"], rr["npairs"])
 
-    return sim_clust_cf[0], sim_clust_w_err[0] - sim_clust_cf[0]
+    for sample in [dd, dr, rd, rr]: assert len(sample) == 1
+    # dd is the smallest (though not by a long way) but we still claim poisson error dominates
+    # This not a huge deal as the uncertainty on the sim clustering << that on the obs clustering
+    for sample in [dr, rd, rr]: assert sample["npairs"] > dd["npairs"]
 
+    sim_clust = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), dd, dr, rd, rr)
+    sim_clust_w_err = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), _add_poisson_err(dd), dr, rd, rr)
 
-# Given the galaxys (location, mass) and the mass cuts for the centrals and satellites
-# Compute clustering (for some hardcoded definition of clustering)
-def compute_hsc_clustering(gals, cen_cuts, sat_cuts, for_plot=False):
-    s1 = gals[
-        (gals["logm_max"] > cen_cuts[0]) & (gals["logm_max"] < cen_cuts[1])
-    ]
-    s2 = gals[
-        (gals["logm_max"] > sat_cuts[0]) & (gals["logm_max"] < sat_cuts[1])
-    ]
+    for sample in [sim_clust, sim_clust_w_err]: assert len(sample) == 1
 
-    # Load randoms ensuring that their z distibution is the same as our samples
-    r1 = d.load_randoms(s1["z_best"])
-    r2 = d.load_randoms(s2["z_best"])
-    print("Randoms should be much longer that sample:", len(r1), len(s1), len(s2))
+    return sim_clust[0], np.abs(sim_clust_w_err[0] - sim_clust[0])
 
-    # Split randoms into two parts
-    r_div = np.arange(len(r1))
-    np.random.shuffle(r_div)
-    r1 = r1[r_div[:len(r_div) // 2]]
-    r2 = r2[r_div[len(r_div) // 2:]]
-    assert len(r1) == len(r2)
-
-    dd = squash(obs_clustering(s1, s2))
-    dr = squash(obs_clustering(s1, r2))
-    rd = squash(obs_clustering(r1, s2))
-    rr = squash(obs_clustering(r1, r2))
-
-    obs_clust_cf = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), dd, dr, rd, rr)
-    dd, dr, rd, rr = add_poisson_err(dd), add_poisson_err(dr), add_poisson_err(rd), add_poisson_err(rr),
-    obs_clust_w_err = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), dd, dr, rd, rr)
-
-    assert len(obs_clust_cf) == 1, len(obs_clust_cf)
-    return obs_clust_cf[0], obs_clust_w_err[0] - obs_clust_cf[0]
-
-
-def sim_clustering(s1, s2, sim_size, applyRSD1=False, applyRSD2=False):
-    # cnts = halotools.mock_observables.counts_in_cylinders(
-    #         s1[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),
-    #         s2[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),
-    #         proj_search_radius=1,
-    #         cylinder_half_length=10,
-    #         period=sim_size,
-    # )
-    # pet_z = (s1["halo_z"] + np.random.normal(0, 5, len(s1))) % 400
-    # assert np.sum(test["npairs"]) == np.sum(cnts)
-
+def sim_clustering(s1, s2, sim_size, applyRSD1=False, applyRSD2=False, test=False):
     z1 = s1["halo_z"]
     if applyRSD1:
         z1 = halotools.mock_observables.apply_zspace_distortion(
@@ -131,16 +81,67 @@ def sim_clustering(s1, s2, sim_size, applyRSD1=False, applyRSD2=False):
             Z2=z2,
     )
 
+    if test:
+        # Use halotools to check that I am calling corrfunc correctly
+        cnts = halotools.mock_observables.counts_in_cylinders(
+                s1[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),
+                s2[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),
+                proj_search_radius=1,
+                cylinder_half_length=10,
+                period=sim_size,
+        )
+        assert np.sum(res["npairs"]) == np.sum(cnts)
+
     return res
+
+# Given the galaxys (location, mass) and the mass cuts for the centrals and satellites
+# Compute clustering (for some definition of clustering encoded in this function)
+def compute_hsc_clustering(gals, cen_cuts, sat_cuts):
+    s1 = gals[
+        (gals["logm_max"] > cen_cuts[0]) & (gals["logm_max"] < cen_cuts[1])
+    ]
+    s2 = gals[
+        (gals["logm_max"] > sat_cuts[0]) & (gals["logm_max"] < sat_cuts[1])
+    ]
+
+    # Load randoms ensuring that their z distibution is the same as our samples
+    r1 = d.load_randoms(s1["z_best"])
+    r2 = d.load_randoms(s2["z_best"])
+    assert len(r1) > 20 * max(len(s1), len(s2)), "Randoms should be much longer than the sample"
+
+    # Select half the randoms for r1 and the other half for r2
+    r_div = np.arange(len(r1))
+    np.random.shuffle(r_div)
+    r1 = r1[r_div[:len(r_div) // 2]]
+    r2 = r2[r_div[len(r_div) // 2:]]
+    assert len(r1) == len(r2)
+
+    # Sqaush because we don't care about having it in 10 pi bins. We just want the summary
+    dd = _squash(obs_clustering(s1, s2))
+    dr = _squash(obs_clustering(s1, r2))
+    rd = _squash(obs_clustering(r1, s2))
+    rr = _squash(obs_clustering(r1, r2))
+
+    for sample in [dd, dr, rd, rr]: assert len(sample) == 1
+    # dd is the smallest by a long way so poisson error on it will dominate
+    for sample in [dr, rd, rr]: assert sample["npairs"] > 6 * dd["npairs"]
+
+    # Go from counts to clustering (and estimate the error)
+    obs_clust = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), dd, dr, rd, rr)
+    obs_clust_w_err = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), _add_poisson_err(dd), dr, rd, rr)
+
+    for sample in [obs_clust, obs_clust_w_err]: assert len(sample) == 1
+
+    return obs_clust[0], np.abs(obs_clust_w_err[0] - obs_clust[0])
 
 def obs_clustering(s1, s2, test=False):
     cosmo = cosmology.setCosmology("planck18")
     res = DDrppi_mocks(
             autocorr=False,
-            cosmology=1, # This doesn't matter
+            cosmology=1, # This is ignored as is_comiving_dist == True and we convert z to Mpc/h
             nthreads=1, # This is ignored because we didn't compile with it
-            pimax=10,
-            binfile=np.linspace(0.000001, 1, num=2), # Just 1 bin out to 1Mpc/h
+            pimax=10, # We get this back in 10 bins
+            binfile=np.linspace(0.000001, 1, num=2), # Just 1 bin out to 1 Mpc/h
             RA1=s1["ra"],
             DEC1=s1["dec"],
             CZ1=cosmo.comovingDistance(0., s1["z_best"]), # Returns Mpc/h
@@ -151,12 +152,15 @@ def obs_clustering(s1, s2, test=False):
     )
 
     if test:
-        print(test_obs_clustering(s1, s2))
+        print("Comparing corrfunc with my handrolled correlational func")
+        print(handrolled_obs_clustering(s1, s2))
         print(np.sum(res["npairs"]))
 
     return res
 
-def test_obs_clustering(s1, s2):
+# My artisinal, handrolled correlation function for observations.
+# Only used to check that I am calling corrfunc correctly
+def handrolled_obs_clustering(s1, s2):
     cnts = 0
     cosmo = cosmology.setCosmology("planck18")
     for s in s1:
@@ -171,13 +175,13 @@ def test_obs_clustering(s1, s2):
         cnts += s2_match
     return cnts
 
-def compute_clustering(s1_s2, s1_r, n_s2, n_r):
-    # https://files.slack.com/files-pri/T5WPLGLAF-FD1NHDZ1R/image.png
 
-    # The number of s2 and randoms near to s1
-    # If these numbers are the same and the samples are the same size, xi == 0. s2 ~ random
-    # If these numbers are the same but s2 is half the size, xi == 1. s2 twice as likely
-    # to be near to s1 as random
-    # etc
-    xi = (s1_s2 / s1_r) * (n_r / n_s2) - 1
-    return xi
+# We get dd along the pi direction. Square into a single bin
+def _squash(dd):
+    dd[0]["npairs"] = np.sum(dd["npairs"])
+    return dd[:1]
+
+# Approximate dd error
+def _add_poisson_err(dd):
+    dd[0]["npairs"] += np.sqrt(dd[0]["npairs"])
+    return dd
