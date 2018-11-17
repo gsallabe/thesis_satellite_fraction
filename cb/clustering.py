@@ -10,15 +10,13 @@ from colossus.cosmology import cosmology
 
 import data as d
 
-def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_cuts, sat_cuts):
-    s1 = sim_data[
-        (log_stellar_masses > cen_cuts[0]) & (log_stellar_masses < cen_cuts[1])
-    ]
+def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_sat_div):
+    s1 = sim_data[log_stellar_masses > cen_sat_div]
     s2 = sim_data[
-            (log_stellar_masses > sat_cuts[0]) & (log_stellar_masses < sat_cuts[1])
+            (log_stellar_masses < cen_sat_div) & (log_stellar_masses > (cen_sat_div - 0.1))
     ]
     # Compromise between accuracy and run time
-    random_len = max(len(s1), len(s2)) * 20
+    random_len = max(len(s1), len(s2)) * 30
 
     r1 = sim_size * np.random.random(size=(random_len, 3))
     r1 = r1.ravel().view([("halo_x", np.float64), ("halo_y", np.float64), ("halo_z", np.float64)])
@@ -96,12 +94,10 @@ def sim_clustering(s1, s2, sim_size, applyRSD1=False, applyRSD2=False, test=Fals
 
 # Given the galaxys (location, mass) and the mass cuts for the centrals and satellites
 # Compute clustering (for some definition of clustering encoded in this function)
-def compute_hsc_clustering(gals, cen_cuts, sat_cuts):
-    s1 = gals[
-        (gals["logm_max"] > cen_cuts[0]) & (gals["logm_max"] < cen_cuts[1])
-    ]
+def compute_hsc_clustering(gals, cen_sat_div):
+    s1 = gals[gals["logm_max"] > cen_sat_div] # Centrals
     s2 = gals[
-        (gals["logm_max"] > sat_cuts[0]) & (gals["logm_max"] < sat_cuts[1])
+        (gals["logm_max"] < cen_sat_div) & (gals["logm_max"] > (cen_sat_div - 0.1))
     ]
 
     # Load randoms ensuring that their z distibution is the same as our samples

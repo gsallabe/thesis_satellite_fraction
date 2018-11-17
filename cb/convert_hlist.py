@@ -4,6 +4,8 @@ import halotools.sim_manager
 
 hlist_cols = {
     "id": (1, "int32"),
+    "pid": (5, "int32"),
+    "upid": (6, "int32"),
     "Mpeak": (60, "float64"),
     "Vmax@Mpeak": (74, "float64"),
     "x": (17, "float64"),
@@ -26,7 +28,7 @@ def main():
             row_cut_min_dict=hlist_min_cuts,
     )
     reduced_catalog = hlist_reader.read_ascii()
-    np.save(data_base + "hlist_0.73330.cut.2", reduced_catalog)
+    np.save(data_base + "hlist_0.73330.cut.3", reduced_catalog)
 
 
 
