@@ -1,19 +1,7 @@
-# What are we doing?
+# Mock Making
 
-At a high level we want to build a mock universe for Song to test his cluster finder on.
+A set of scripts to make an HSC like mock. Each step should be self documenting (e.g. at the top of the notebook) so here we just list the steps.
 
-We start with an N-body simulation.
-
-Put galaxies in with behroozi functional form. And the scatter.
-
-Match the SMF and the counts in cylinders with HSC.
-We also have the SMF from HSC.
-
-We then compare the 3d clustering (just in one radial bin, with a redshift cut) in the simulation to ???
-
-
-Fix beta and gamma in Behroozi functional form.
-
-1Mpc and 10Mpc for cic.
-
-Put in Rsd and some percentage have only photoz
+* convert_hlist.py: A script to take an MDPL halo list in consistent trees format and to remove unneeded columns and rows where the halo mass is small (< 12).
+* main.ipynb: The notebook where we make the mock (mock.npy)
+* analysis.ipynb: Some analysis on the mock

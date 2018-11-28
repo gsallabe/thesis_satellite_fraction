@@ -8,6 +8,11 @@ from Corrfunc.utils import convert_3d_counts_to_cf
 
 from colossus.cosmology import cosmology
 
+from joblib import Memory
+
+import os
+memory = Memory((os.path.dirname(__file__) or ".") + "/joblib_cache", verbose=2)
+
 import data as d
 
 def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_sat_div):
@@ -92,8 +97,38 @@ def sim_clustering(s1, s2, sim_size, applyRSD1=False, applyRSD2=False, test=Fals
 
     return res
 
+def analysis_sim_clustering(sim_data, cen_sat_div, sim_size):
+    s1 = sim_data[sim_data["stellar_mass"] > 10**cen_sat_div]
+    s2 = sim_data[
+            (sim_data["stellar_mass"] < 10**cen_sat_div) &
+            (sim_data["stellar_mass"] > 10**(cen_sat_div - 0.01))
+    ]
+    np.save("s1", s1)
+    np.save("s2", s2)
+    print("saved")
+    print(len(s1), len(s2))
+    assert not np.may_share_memory(s1, sim_data)
+
+    s1["halo_z"] = halotools.mock_observables.apply_zspace_distortion(
+            s1["halo_z"], s1["vz"], 0.35, astropy.cosmology.Planck15, sim_size,
+    )
+    s2["halo_z"] = halotools.mock_observables.apply_zspace_distortion(
+            s2["halo_z"], s2["vz"], 0.35, astropy.cosmology.Planck15, sim_size,
+    )
+
+    _, indexes = halotools.mock_observables.counts_in_cylinders(
+            np.copy(s1)[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),#s1_pos,
+            np.copy(s2)[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),#s2_pos,
+            proj_search_radius=1,
+            cylinder_half_length=10,
+            period=sim_size,
+            return_indexes=True,
+    )
+    return indexes, s2["stellar_mass"]
+
 # Given the galaxys (location, mass) and the mass cuts for the centrals and satellites
 # Compute clustering (for some definition of clustering encoded in this function)
+@memory.cache()
 def compute_hsc_clustering(gals, cen_sat_div):
     s1 = gals[gals["logm_max"] > cen_sat_div] # Centrals
     s2 = gals[
