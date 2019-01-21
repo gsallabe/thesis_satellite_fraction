@@ -13,7 +13,7 @@ def get_sm_for_sim(sim_data, b_params, s_params, x_field, sanity=False):
     min_mvir = np.min(log_halo_masses)
     max_mvir = np.max(log_halo_masses)
 
-    sample_halo_masses = np.linspace(min_mvir, max_mvir, num=12)
+    sample_halo_masses = np.linspace(min_mvir, max_mvir, num=120)
 
     try:
         sample_stellar_masses = smhm_fit.f_shmr(
@@ -40,7 +40,7 @@ def get_sm_for_sim(sim_data, b_params, s_params, x_field, sanity=False):
     # will take longer to converge
 
     log_sm_scatter = s_params[0] * log_halo_masses + s_params[1]
-    if not np.all(log_sm_scatter > 0):
+    if not np.all(log_sm_scatter >= 0):
         print("negative scatter")
         return np.zeros_like(log_stellar_masses)
 

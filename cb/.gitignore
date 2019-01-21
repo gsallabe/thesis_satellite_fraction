@@ -1,4 +1,4 @@
-mock.npy
+mocks
 .ipynb_checkpoints
 __pycache__
 joblib_cache

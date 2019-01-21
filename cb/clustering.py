@@ -29,9 +29,10 @@ def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_sat_div):
     r2 = sim_size * np.random.random(size=(random_len, 3))
     r2 = r2.ravel().view([("halo_x", np.float64), ("halo_y", np.float64), ("halo_z", np.float64)])
 
-    dd = _squash(sim_clustering(s1, s2, sim_size, applyRSD1=True, applyRSD2=True))
-    dr = _squash(sim_clustering(s1, r2, sim_size, applyRSD1=True))
-    rd = _squash(sim_clustering(r1, s2, sim_size, applyRSD2=True))
+    aRSD = True
+    dd = _squash(sim_clustering(s1, s2, sim_size, applyRSD1=aRSD, applyRSD2=aRSD))
+    dr = _squash(sim_clustering(s1, r2, sim_size, applyRSD1=aRSD))
+    rd = _squash(sim_clustering(r1, s2, sim_size, applyRSD2=aRSD))
     rr = _squash(sim_clustering(r1, r2, sim_size))
 
 

@@ -17,7 +17,7 @@ hlist_cols = {
 }
 
 hlist_min_cuts = {
-        "Mpeak": 1e12,
+        "Mpeak": 1e11,
 }
 
 def main():
@@ -28,7 +28,7 @@ def main():
             row_cut_min_dict=hlist_min_cuts,
     )
     reduced_catalog = hlist_reader.read_ascii()
-    np.save(data_base + "hlist_0.73330.cut.3", reduced_catalog)
+    np.save(data_base + "hlist_0.73330.cut.4", reduced_catalog)
 
 
 
