@@ -68,6 +68,10 @@ def load_mdpl():
             "z": "halo_z",
     })
 
+    # This starts in units of M* / h. We want to use M*.
+    # M* ~ 0.7 M*/h or M*/0.7 ~ M*/h
+    # X M*/h ~ X M*/0.7 ~ X/0.7 M*
+
     sim_data["halo_mvir"] = sim_data["halo_mvir"] / 0.6777
 
     return sim_data, 1000

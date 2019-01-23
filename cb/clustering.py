@@ -104,10 +104,6 @@ def analysis_sim_clustering(sim_data, cen_sat_div, sim_size):
             (sim_data["stellar_mass"] < 10**cen_sat_div) &
             (sim_data["stellar_mass"] > 10**(cen_sat_div - 0.01))
     ]
-    np.save("s1", s1)
-    np.save("s2", s2)
-    print("saved")
-    print(len(s1), len(s2))
     assert not np.may_share_memory(s1, sim_data)
 
     s1["halo_z"] = halotools.mock_observables.apply_zspace_distortion(

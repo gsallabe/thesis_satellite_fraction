@@ -1,12 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from get_sm_for_sim import get_sm_for_sim, get_smf
-import likelihood as l
+from get_sm_for_sim import get_smf
 
-def plot_smfs(sim_data, obs_smf, b_params, s_params, sim_size, x_field):
-    log_stellar_masses = get_sm_for_sim(sim_data, b_params, s_params, x_field)
-
+def plot_smfs(obs_smf, log_stellar_masses, sim_size):
     smf_bins = np.append(obs_smf["logm_0"], obs_smf["logm_1"][-1])
     smf_centers = obs_smf["logm_mean"]
 

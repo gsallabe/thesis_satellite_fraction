@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.interpolate
 import matplotlib.pyplot as plt
+import scipy
 
 import smhm_fit
 
@@ -13,24 +14,13 @@ def get_sm_for_sim(sim_data, b_params, s_params, x_field, sanity=False):
     min_mvir = np.min(log_halo_masses)
     max_mvir = np.max(log_halo_masses)
 
-    sample_halo_masses = np.linspace(min_mvir, max_mvir, num=120)
+    log_stellar_masses = smhm_fit.f_shmr(
+        log_halo_masses,
+        10**b_params[0],
+        10**b_params[1],
+        *b_params[2:],
+    )
 
-    try:
-        sample_stellar_masses = smhm_fit.f_shmr(
-            sample_halo_masses,
-            10**b_params[0],
-            10**b_params[1],
-            *b_params[2:],
-        )
-    except Exception as e:
-        if e.args[0].startswith("Failure to invert"):
-            return np.zeros_like(log_halo_masses)
-        raise
-
-
-    f_mvir_to_sm = scipy.interpolate.interp1d(sample_halo_masses, sample_stellar_masses)
-
-    log_stellar_masses = f_mvir_to_sm(log_halo_masses)
     if not np.all(np.isfinite(log_stellar_masses)):
         print("infinite SM")
         return np.zeros_like(log_stellar_masses)
@@ -38,7 +28,6 @@ def get_sm_for_sim(sim_data, b_params, s_params, x_field, sanity=False):
     # This adds some stochasticity... Ideally we would keep these as a distribution
     # But that is much harder. So we just accept the stochasticity and that the MCMC
     # will take longer to converge
-
     log_sm_scatter = s_params[0] * log_halo_masses + s_params[1]
     if not np.all(log_sm_scatter >= 0):
         print("negative scatter")
@@ -66,7 +55,7 @@ def get_smf(log_stellar_masses, bins, sim_volume):
 
 
 def _sanity_get_sm_for_sim(sim_data, b_params, s_params, x_field):
-    log_stellar_masses, sample_halo_masses, sample_stellar_masses, f_mvir_to_sm, min_mvir, max_mvir = get_sm_for_sim(sim_data, b_params, s_params, sanity=True)
+    log_stellar_masses, sample_halo_masses, sample_stellar_masses, f_mvir_to_sm, min_mvir, max_mvir = get_sm_for_sim(sim_data, b_params, s_params, x_field, sanity=True)
 
     # Check that the samples + interpolation look sane
     _, ax = plt.subplots()
