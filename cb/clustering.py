@@ -98,31 +98,6 @@ def sim_clustering(s1, s2, sim_size, applyRSD1=False, applyRSD2=False, test=Fals
 
     return res
 
-def analysis_sim_clustering(sim_data, cen_sat_div, sim_size):
-    s1 = sim_data[sim_data["stellar_mass"] > 10**cen_sat_div]
-    s2 = sim_data[
-            (sim_data["stellar_mass"] < 10**cen_sat_div) &
-            (sim_data["stellar_mass"] > 10**(cen_sat_div - 0.01))
-    ]
-    assert not np.may_share_memory(s1, sim_data)
-
-    s1["halo_z"] = halotools.mock_observables.apply_zspace_distortion(
-            s1["halo_z"], s1["vz"], 0.35, astropy.cosmology.Planck15, sim_size,
-    )
-    s2["halo_z"] = halotools.mock_observables.apply_zspace_distortion(
-            s2["halo_z"], s2["vz"], 0.35, astropy.cosmology.Planck15, sim_size,
-    )
-
-    _, indexes = halotools.mock_observables.counts_in_cylinders(
-            np.copy(s1)[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),#s1_pos,
-            np.copy(s2)[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),#s2_pos,
-            proj_search_radius=1,
-            cylinder_half_length=10,
-            period=sim_size,
-            return_indexes=True,
-    )
-    return indexes, s2["stellar_mass"]
-
 # Given the galaxys (location, mass) and the mass cuts for the centrals and satellites
 # Compute clustering (for some definition of clustering encoded in this function)
 @memory.cache()
@@ -166,7 +141,7 @@ def obs_clustering(s1, s2, test=False):
     cosmo = cosmology.setCosmology("planck18")
     res = DDrppi_mocks(
             autocorr=False,
-            cosmology=1, # This is ignored as is_comiving_dist == True and we convert z to Mpc/h
+            cosmology=1, # This is ignored as is_comoving_dist == True and we convert z to Mpc/h
             nthreads=12,
             pimax=10, # We get this back in 10 bins
             binfile=np.linspace(0.000001, 1, num=2), # Just 1 bin out to 1 Mpc/h
@@ -181,17 +156,19 @@ def obs_clustering(s1, s2, test=False):
 
     if test:
         print("Comparing corrfunc with my handrolled correlational func")
-        print(handrolled_obs_clustering(s1, s2))
+        print(handrolled_obs_clustering(s1, s2)[0])
         print(np.sum(res["npairs"]))
 
     return res
 
 # My artisinal, handrolled correlation function for observations.
 # Only used to check that I am calling corrfunc correctly
+# And used in the obs part
 def handrolled_obs_clustering(s1, s2):
     cnts = 0
     cosmo = cosmology.setCosmology("planck18")
-    for s in s1:
+    indexes = []
+    for i, s in enumerate(s1):
         z_dist = cosmo.comovingDistance(s["z_best"], s2["z_best"])
         s2_sub = s2[np.abs(z_dist) < 10]
         angular_dist = np.arccos(
@@ -201,7 +178,10 @@ def handrolled_obs_clustering(s1, s2):
         xy_dist = angular_dist * cosmo.comovingDistance(0, s["z_best"])
         s2_match = np.count_nonzero(xy_dist < 1)
         cnts += s2_match
-    return cnts
+        for j in np.where(np.abs(z_dist) < 10)[0][xy_dist < 1]:
+            indexes.append((i, j))
+    indexes = np.array(indexes, dtype=[("i1", np.int32), ("i2", np.int32)])
+    return cnts, indexes
 
 
 # We get dd along the pi direction. Square into a single bin
@@ -213,3 +193,39 @@ def _squash(dd):
 def _add_poisson_err(dd):
     dd[0]["npairs"] += np.sqrt(dd[0]["npairs"])
     return dd
+
+def analysis_obs_clustering(gals, cen_sat_div):
+    s1 = gals[gals["logm_max"] > cen_sat_div] # Centrals
+    s2 = gals[
+        (gals["logm_max"] < cen_sat_div) & (gals["logm_max"] > (cen_sat_div - 0.01))
+    ]
+
+    cnts, indexes = handrolled_obs_clustering(s1, s2)
+    assert cnts == np.sum(obs_clustering(s1, s2)["npairs"])
+    return indexes, s2["logm_max"]
+
+
+def analysis_sim_clustering(sim_data, cen_sat_div, sim_size):
+    s1 = sim_data[sim_data["stellar_mass"] > 10**cen_sat_div]
+    s2 = sim_data[
+            (sim_data["stellar_mass"] < 10**cen_sat_div) &
+            (sim_data["stellar_mass"] > 10**(cen_sat_div - 0.01))
+    ]
+    assert not np.may_share_memory(s1, sim_data)
+
+    s1["halo_z"] = halotools.mock_observables.apply_zspace_distortion(
+            s1["halo_z"], s1["vz"], 0.35, astropy.cosmology.Planck15, sim_size,
+    )
+    s2["halo_z"] = halotools.mock_observables.apply_zspace_distortion(
+            s2["halo_z"], s2["vz"], 0.35, astropy.cosmology.Planck15, sim_size,
+    )
+
+    _, indexes = halotools.mock_observables.counts_in_cylinders(
+            np.copy(s1)[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),#s1_pos,
+            np.copy(s2)[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),#s2_pos,
+            proj_search_radius=1,
+            cylinder_half_length=10,
+            period=sim_size,
+            return_indexes=True,
+    )
+    return indexes, s2["stellar_mass"]
