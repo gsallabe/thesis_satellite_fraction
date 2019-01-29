@@ -20,35 +20,37 @@ def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_sat_div):
     s2 = sim_data[
             (log_stellar_masses < cen_sat_div) & (log_stellar_masses > (cen_sat_div - 0.1))
     ]
-    # Compromise between accuracy and run time
-    random_len = max(len(s1), len(s2)) * 10
-
-    r1 = sim_size * np.random.random(size=(random_len, 3))
-    r1 = r1.ravel().view([("halo_x", np.float64), ("halo_y", np.float64), ("halo_z", np.float64)])
-
-    r2 = sim_size * np.random.random(size=(random_len, 3))
-    r2 = r2.ravel().view([("halo_x", np.float64), ("halo_y", np.float64), ("halo_z", np.float64)])
 
     aRSD = True
     dd = _squash(sim_clustering(s1, s2, sim_size, applyRSD1=aRSD, applyRSD2=aRSD))
-    dr = _squash(sim_clustering(s1, r2, sim_size, applyRSD1=aRSD))
-    rd = _squash(sim_clustering(r1, s2, sim_size, applyRSD2=aRSD))
-    rr = _squash(sim_clustering(r1, r2, sim_size))
+    assert len(dd) == 1
 
+    random_len = max(len(s1), len(s2)) * 1000
+    dr, rd, rr = predict_counts(sim_size, s1, s2, random_len)
 
-    for sample in [dd, dr, rd, rr]: assert len(sample) == 1
-    # dd is the smallest (though not by a long way) but we still claim poisson error dominates
-    # This not a huge deal as the uncertainty on the sim clustering << that on the obs clustering
-    for sample in [dr, rd, rr]:
-        pass
-        # if sample["npairs"] < dd["npairs"]: print("This is not good. One of (dr,rd,rr,{}) < (dd,{}) ", sample["npairs"][0], dd["npairs"][0])
-
-    sim_clust = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), dd, dr, rd, rr)
-    sim_clust_w_err = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), _add_poisson_err(dd), dr, rd, rr)
+    sim_clust = convert_3d_counts_to_cf(len(s1), len(s2), random_len, random_len, dd, dr, rd, rr)
+    sim_clust_w_err = convert_3d_counts_to_cf(len(s1), len(s2), random_len, random_len, _add_poisson_err(dd), dr, rd, rr)
 
     for sample in [sim_clust, sim_clust_w_err]: assert len(sample) == 1
 
     return sim_clust[0], np.abs(sim_clust_w_err[0] - sim_clust[0])
+
+def predict_counts(sim_size, s1, s2, random_len, pimax=10, rmax=1):
+    v_cyl = np.pi * rmax**2 * (pimax * 2)
+    frac_one_cyl = v_cyl / sim_size**3
+
+    like_cf = lambda x: np.array([x], dtype=[("npairs", "f8")])
+    # dr
+    dr = like_cf((frac_one_cyl * len(s1)) * random_len)
+
+    # rd
+    rd = like_cf((frac_one_cyl * random_len) * len(s2))
+
+    # RR - the number of r2 in r1's cylinder
+    rr = like_cf((frac_one_cyl * random_len) * random_len)
+
+    return dr, rd, rr
+
 
 def sim_clustering(s1, s2, sim_size, applyRSD1=False, applyRSD2=False, test=False):
     z1 = s1["halo_z"]
