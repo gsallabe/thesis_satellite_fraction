@@ -75,7 +75,7 @@ def sim_clustering(s1, s2, sim_size, applyRSD1=False, applyRSD2=False, test=Fals
 
     res = DDrppi(
             autocorr=False,
-            nthreads=12,
+            nthreads=2,
             pimax=10,
             binfile=np.linspace(0.000001, 1, num=2), # Just 1 bin out to 1Mpc
             X1=s1["halo_x"],

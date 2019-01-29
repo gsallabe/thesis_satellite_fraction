@@ -15,6 +15,6 @@ def f_shmr_inverse(log_stellar_masses, m1, sm0, beta, delta, gamma):
 
 # Given halo masses, finds stellar masses
 def f_shmr(log_halo_masses, m1, sm0, beta, delta, gamma):
-    sample_log_sm = np.linspace(5, 14, num=901)
+    sample_log_sm = np.linspace(5, 14, num=201)
     sample_log_hm = f_shmr_inverse(sample_log_sm, m1, sm0, beta, delta, gamma)
     return np.interp(log_halo_masses, sample_log_hm, sample_log_sm)

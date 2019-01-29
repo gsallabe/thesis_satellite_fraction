@@ -50,7 +50,6 @@ def compute_chi2(
     return compute_smf_chi2(obs_smf, sim_smf) + clust_chi2
 
 def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, cen_sat_div, x_field, n):
-    print(params, end=" ")
     chi2 = []
     for i in range(n):
         chi2.append(compute_chi2(
@@ -61,5 +60,5 @@ def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, cen_sat_div, 
             break
 
     chi2 = np.mean(chi2)
-    print(chi2)
+    print(params, chi2)
     return chi2
