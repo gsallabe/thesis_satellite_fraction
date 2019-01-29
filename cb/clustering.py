@@ -21,7 +21,7 @@ def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_sat_div):
             (log_stellar_masses < cen_sat_div) & (log_stellar_masses > (cen_sat_div - 0.1))
     ]
     # Compromise between accuracy and run time
-    random_len = max(len(s1), len(s2)) * 30
+    random_len = max(len(s1), len(s2)) * 10
 
     r1 = sim_size * np.random.random(size=(random_len, 3))
     r1 = r1.ravel().view([("halo_x", np.float64), ("halo_y", np.float64), ("halo_z", np.float64)])
@@ -40,7 +40,8 @@ def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_sat_div):
     # dd is the smallest (though not by a long way) but we still claim poisson error dominates
     # This not a huge deal as the uncertainty on the sim clustering << that on the obs clustering
     for sample in [dr, rd, rr]:
-        if sample["npairs"] < dd["npairs"]: print("This is not good", sample["npairs"], dd["npairs"])
+        pass
+        # if sample["npairs"] < dd["npairs"]: print("This is not good. One of (dr,rd,rr,{}) < (dd,{}) ", sample["npairs"][0], dd["npairs"][0])
 
     sim_clust = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), dd, dr, rd, rr)
     sim_clust_w_err = convert_3d_counts_to_cf(len(s1), len(s2), len(r1), len(r2), _add_poisson_err(dd), dr, rd, rr)

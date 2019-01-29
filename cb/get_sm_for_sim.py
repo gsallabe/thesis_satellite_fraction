@@ -28,12 +28,9 @@ def get_sm_for_sim(sim_data, b_params, s_params, x_field, sanity=False):
     # This adds some stochasticity... Ideally we would keep these as a distribution
     # But that is much harder. So we just accept the stochasticity and that the MCMC
     # will take longer to converge
-    log_sm_scatter = s_params[0] * log_halo_masses + s_params[1]
-    if not np.all(log_sm_scatter >= 0):
-        print("negative scatter")
-        return np.zeros_like(log_stellar_masses)
+    log_sm_scatter = np.maximum(s_params[0] * log_halo_masses + s_params[1], 0)
 
-    log_stellar_masses += np.random.normal(0, log_sm_scatter, size=len(log_sm_scatter))
+    log_stellar_masses += np.random.normal(0, log_sm_scatter)
 
     if sanity:
         return log_stellar_masses, sample_halo_masses, sample_stellar_masses, f_mvir_to_sm, min_mvir, max_mvir

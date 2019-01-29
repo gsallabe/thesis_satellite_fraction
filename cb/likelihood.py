@@ -39,6 +39,8 @@ def compute_chi2(
     clust_delta_err = np.sqrt(sim_clust["err"]**2 + obs_clust["err"]**2)
     clust_chi2 = np.sum(np.power(clust_delta / clust_delta_err, 2))
 
+    # We don't need the error on the sim_smf because it will be a lot smaller than on the observations
+    # We didn't really need it on the clustering either but it doesn't cost anything...
     sim_smf = get_smf(
             log_stellar_masses,
             np.append(obs_smf["logm_0"], obs_smf["logm_1"][-1]),
@@ -48,11 +50,16 @@ def compute_chi2(
     return compute_smf_chi2(obs_smf, sim_smf) + clust_chi2
 
 def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, cen_sat_div, x_field, n):
-    print(params)
+    print(params, end=" ")
+    chi2 = []
+    for i in range(n):
+        chi2.append(compute_chi2(
+            params, sim_data, obs_smf, obs_clust, sim_size, cen_sat_div, x_field,
+        ))
+        # We don't need to repro terrible points
+        if np.mean(chi2) > 5:
+            break
 
-    chi2 = np.mean([compute_chi2(
-        params, sim_data, obs_smf, obs_clust, sim_size, cen_sat_div, x_field,
-    ) for i in range(n)])
-
+    chi2 = np.mean(chi2)
     print(chi2)
     return chi2

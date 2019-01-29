@@ -1,4 +1,6 @@
 mocks
+intermediate_data
+
 .ipynb_checkpoints
 __pycache__
 joblib_cache
