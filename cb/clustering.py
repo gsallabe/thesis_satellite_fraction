@@ -20,6 +20,8 @@ def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_sat_div):
     s2 = sim_data[
             (log_stellar_masses < cen_sat_div) & (log_stellar_masses > (cen_sat_div - 0.1))
     ]
+    if len(s1) == 0 or len(s2) == 0:
+        return 0, 1e-9
 
     aRSD = True
     dd = _squash(sim_clustering(s1, s2, sim_size, applyRSD1=aRSD, applyRSD2=aRSD))

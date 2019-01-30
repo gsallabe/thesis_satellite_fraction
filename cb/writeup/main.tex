@@ -43,8 +43,9 @@ Initially we modelled (as in the previous equation) \Mstar{} as a function of \M
 
 \begin{figure}[h]
     \includegraphics[width=\textwidth]{images/mhalo_vs_vmax.png}
-    \caption{\vmp{} -- \Mhalo{} relation.
-    \label{fig:mhalo_vs_vmax}
+    \caption{
+        \vmp{} -- \Mhalo{} relation.
+        \label{fig:mhalo_vs_vmax}
     }
 \end{figure}
 
@@ -119,6 +120,19 @@ Based on how we parameterize scatter (linear decrease vs \vmp{}), we expect for 
     \includegraphics[width=\textwidth]{images/scatter_mcen_mhalo.png}
     \caption{Looks like what we expect from the scatter params. Ignore the kick up at the end, I'm pretty sure the uncertainty on that point is huge.
     \label{fig:scatter}
+}
+\end{figure}
+
+
+\subsection{Two point correlation function}
+
+Does our two point autocorrelation function look good? Compare to \cite{Tinker2017} who used CMASS. See \autoref{fig:2pcf}.
+
+\begin{figure}[h]
+    \includegraphics[width=\textwidth]{images/2pcf.png}
+    \caption{Satellite fraction with 2 methods of cluster finding. The first just uses Rockstar cen/sat. The second constructs cylinders 1MPC in radius and 10MPc half length. A galaxy is a satellite if it is in the cylinder of a larger galaxy. The mock matches HSC well.
+        I'm not sure how surprised we should be about this as it seems to follow pretty directly from clustering?
+    \label{fig:2pcf}
 }
 \end{figure}
 
