@@ -66,6 +66,19 @@ This is not purely guessing. We can rationalise that $M_1$ will decrease signifi
 
 We also note that \autoref{eq:sm_hm_functional_form} relates $\Mhalo(\Mstar)$, or $\vmp(\Mstar)$. We numerically invert this to get the inverse.
 
+However, this functional form is designed to fit the full SM-HM range. As we are only fitting the very high mass end it is absolute overkill. This is problematic for two reasons, 1) optimization/sampling will take longer because we have a 7 dimensional space, 2) Optimization and sampleing will struggle because of the degeneracies/useless parameters.
+
+At the high mass end, the SMHM is basically just a line, though with a bit of curvature. We therefore want to keep 3 parameters. We will fix the other two at their initial points.
+
+\begin{equation}
+    \begin{aligned}
+        &\tlogten{}(\vmp{}) = \tlogten{}(M_1) + \beta~\tlogten{}(\frac{\Mstar{}}{\M{0}}) + \frac{(\frac{\Mstar{}}{\M{0}})^{\delta}}{1 + (\frac{\Mstar{}}{\M{0}})^{- \gamma}} - \frac{1}{2} \\
+        &\tlogten{}(\vmp{}) = \tlogten{}(M_1) + \beta~\tlogten{}(c_1 \Mstar{}) + \frac{(c_1 \Mstar{})^{\delta}}{c_2} - \frac{1}{2}
+    \end{aligned}
+\end{equation}
+
+We can fit a line + some power
+
 \subsection{HaloTools?}
 
 Halotools is awesome and we should use it as much as possible. It also has a number of functions for creating a \cite{Behroozi2010} model. This seems great!

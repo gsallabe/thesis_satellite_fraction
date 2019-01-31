@@ -49,9 +49,11 @@ def compute_chi2(
 
     return compute_smf_chi2(obs_smf, sim_smf) + clust_chi2
 
-def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, cen_sat_div, x_field, n):
+def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, cen_sat_div, x_field, n, extra_params=None):
+    params = _sub_extra_params(params, extra_params)
+
     chi2 = []
-    for i in range(n):
+    for _ in range(n):
         chi2.append(compute_chi2(
             params, sim_data, obs_smf, obs_clust, sim_size, cen_sat_div, x_field,
         ))
@@ -62,3 +64,16 @@ def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, cen_sat_div, 
     chi2 = np.mean(chi2)
     print(params, chi2)
     return chi2
+
+
+def _sub_extra_params(params, extra_params):
+    # We can't mutate the params
+    if type(params) is list:
+        p = np.array(params)
+    else:
+        p = np.copy(params)
+
+    for loc, val in extra_params.items():
+        p = np.insert(p, loc, val)
+
+    return p

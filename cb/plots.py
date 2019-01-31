@@ -15,9 +15,9 @@ def plot_smfs(obs_smf, log_stellar_masses, sim_size):
     ax.scatter(obs_smf["logm_mean"], obs_smf["smf_low"], color=l[0].get_color())
     ax.scatter(obs_smf["logm_mean"], obs_smf["smf_upp"], color=l[0].get_color())
 
-    ax.set(yscale="log", ylim=(np.min(obs_smf["smf_low"]), np.max(obs_smf["smf_upp"])))
+    ax.set(yscale="log")#, ylim=(np.min(obs_smf["smf_low"]), np.max(obs_smf["smf_upp"])))
 
-    ax.plot(smf_centers, sim_smf, label="Sim")
+    ax.plot(smf_centers, sim_smf, label="Sim", marker=".")
     ax.legend()
 
     return fig, ax
