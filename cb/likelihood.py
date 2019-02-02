@@ -50,7 +50,8 @@ def compute_chi2(
     return compute_smf_chi2(obs_smf, sim_smf) + clust_chi2
 
 def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, cen_sat_div, x_field, n, extra_params=None):
-    params = _sub_extra_params(params, extra_params)
+    if extra_params is not None:
+        params = _sub_extra_params(params, extra_params)
 
     chi2 = []
     for _ in range(n):
