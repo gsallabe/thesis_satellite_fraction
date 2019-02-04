@@ -41,6 +41,7 @@ def load_randoms(s_z):
     return rfn.rename_fields(randoms, {"z": "z_best"})
 
 def load_smdpl():
+    raise Exception("Don't use this. It is small and the halo masses are confused")
     f = np.load("/home/christopher/Data/data/universe_machine/sfr_catalog_insitu_exsitu_0.712400_final_wssfr_wv.npz")
     sim_data = np.append(f["centrals"], f["satellites"])
     sim_data = sim_data[sim_data["m"] > 10**12.2]
@@ -59,10 +60,9 @@ def load_smdpl():
     }), 400
 
 def load_mdpl():
-    sim_data = np.load("/home/christopher/Data/data/MDPL/hlist_0.73330.cut.4.npy")
+    sim_data = np.load("/home/christopher/Data/data/MDPL/hlist_0.73330.cut.5.npy")
 
     sim_data = rfn.rename_fields(sim_data, {
-            "Mpeak": "halo_mvir",
             "x": "halo_x",
             "y": "halo_y",
             "z": "halo_z",
