@@ -72,6 +72,7 @@ def load_mdpl():
     # M* ~ 0.7 M*/h or M*/0.7 ~ M*/h
     # X M*/h ~ X M*/0.7 ~ X/0.7 M*
 
-    sim_data["halo_mvir"] = sim_data["halo_mvir"] / 0.6777
+    sim_data["Mpeak"] = sim_data["Mpeak"] / 0.6777
+    sim_data["Mvir"] = sim_data["Mvir"] / 0.6777
 
     return sim_data, 1000
