@@ -2,6 +2,7 @@ import numpy as np
 import scipy.stats
 from astropy.io import fits
 
+# This is for the saved out mock
 def mock(cens, sats, bins):
     sats_counts, _, _ = scipy.stats.binned_statistic(
             sats["stellar_mass"], None, statistic="count", bins=10**bins)
@@ -12,6 +13,18 @@ def mock(cens, sats, bins):
     sat_frac_unc = sat_frac * np.sqrt( 1/sats_counts + 1/(sats_counts + cens_counts) )
 
     return sat_frac, sat_frac_unc
+
+# This is for the runtime mock
+def runtime_mock(log_stellar_masses, upid, bins):
+    sats_counts, _, _ = scipy.stats.binned_statistic(
+            log_stellar_masses[upid != -1], None, statistic="count", bins=10**bins)
+    cens_counts, _, _ = scipy.stats.binned_statistic(
+            log_stellar_masses[upid == -1], None, statistic="count", bins=10**bins)
+
+    sat_frac = sats_counts / (cens_counts + sats_counts)
+
+    return sat_frac
+
 
 # Fig 13 from https://arxiv.org/pdf/1207.2160.pdf
 def reddick():

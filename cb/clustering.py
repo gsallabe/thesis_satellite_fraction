@@ -15,16 +15,19 @@ memory = Memory((os.path.dirname(__file__) or ".") + "/joblib_cache", verbose=2)
 
 import data as d
 
-def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_sat_div):
-    s1 = sim_data[log_stellar_masses > cen_sat_div]
-    s2 = sim_data[
-            (log_stellar_masses < cen_sat_div) & (log_stellar_masses > (cen_sat_div - 0.1))
-    ]
+def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_sat_div, sim_photo_z_f=None):
+    c1 = log_stellar_masses > cen_sat_div
+    s1 = sim_data[c1]
+    lsm1 = log_stellar_masses[c1]
+
+    c2 = (log_stellar_masses < cen_sat_div) & (log_stellar_masses > (cen_sat_div - 0.1))
+    s2 = sim_data[c2]
+    lsm2 = log_stellar_masses[c2]
     if len(s1) == 0 or len(s2) == 0:
         return 0, 1e-9
 
     aRSD = True
-    dd = _squash(sim_clustering(s1, s2, sim_size, applyRSD1=aRSD, applyRSD2=aRSD))
+    dd = _squash(sim_clustering(s1, s2, sim_size, sim_photo_z_f, lsm1, lsm2, applyRSD1=aRSD, applyRSD2=aRSD))
     assert len(dd) == 1
 
     random_len = max(len(s1), len(s2)) * 1000
@@ -53,8 +56,7 @@ def predict_counts(sim_size, s1, s2, random_len, pimax=10, rmax=1):
 
     return dr, rd, rr
 
-
-def sim_clustering(s1, s2, sim_size, applyRSD1=False, applyRSD2=False, test=False):
+def sim_clustering(s1, s2, sim_size, sim_photo_z_f=None, lsm1=None, lsm2=None, applyRSD1=False, applyRSD2=False, test=False):
     z1 = s1["halo_z"]
     if applyRSD1:
         z1 = halotools.mock_observables.apply_zspace_distortion(
@@ -74,6 +76,14 @@ def sim_clustering(s1, s2, sim_size, applyRSD1=False, applyRSD2=False, test=Fals
                 astropy.cosmology.Planck15,
                 sim_size,
         )
+
+    if sim_photo_z_f:
+        photoz_unc = 50
+        for (z, s, lsm) in [(z1, s1, lsm1), (z2, s2, lsm2)]:
+            to_peturb = np.random.uniform(size = len(s)) > sim_photo_z_f(lsm)
+            perturbation = np.random.normal(size=np.count_nonzero(to_peturb), scale=photoz_unc)
+            z[to_peturb] += perturbation
+            z %= sim_size
 
     res = DDrppi(
             autocorr=False,

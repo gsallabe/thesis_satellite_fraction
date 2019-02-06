@@ -26,13 +26,14 @@ def compute_chi2(
         obs_smf,        # HSC SMF
         obs_clust,      # HSC clustering
         sim_size,       # Length of each side in the sim
+        sim_photo_z_f,  # Function that gives % chance of specz
         cen_sat_div,
         x_field,
 ):
     log_stellar_masses = get_sm_for_sim(sim_data, params[:5], params[5:], x_field)
 
     sim_clust = np.array(
-            [c.compute_sim_clustering(sim_data, sim_size, log_stellar_masses, div) for div in cen_sat_div],
+            [c.compute_sim_clustering(sim_data, sim_size, log_stellar_masses, div, sim_photo_z_f) for div in cen_sat_div],
             dtype=[("clustering", np.float64), ("err", np.float64)])
 
     clust_delta = np.abs(sim_clust["clustering"] - obs_clust["clustering"])
@@ -49,14 +50,14 @@ def compute_chi2(
 
     return compute_smf_chi2(obs_smf, sim_smf) + clust_chi2
 
-def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, cen_sat_div, x_field, n, extra_params=None):
+def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, sim_photo_z_f, cen_sat_div, x_field, n, extra_params=None):
     if extra_params is not None:
         params = _sub_extra_params(params, extra_params)
 
     chi2 = []
     for _ in range(n):
         chi2.append(compute_chi2(
-            params, sim_data, obs_smf, obs_clust, sim_size, cen_sat_div, x_field,
+            params, sim_data, obs_smf, obs_clust, sim_size, sim_photo_z_f, cen_sat_div, x_field,
         ))
         # We don't need to repro terrible points
         if np.mean(chi2) > 5:

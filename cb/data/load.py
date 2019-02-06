@@ -19,13 +19,16 @@ def load_smf():
     return smf
 
 
-def load_hsc_gals():
+def load_hsc_gals(allCols=False):
     gals = fits.open(local_base + "s16a_massive_logm100_11.45_z_0.25_0.45_all.fits")
     recarr = np.array(gals[1].data)
     structarr = recarr.view(recarr.dtype.fields, np.ndarray)
-    return structarr[[
-        "ra", "dec", "z_best", "logm_max",
-    ]]
+    if allCols:
+        return structarr
+    else:
+        return structarr[[
+            "ra", "dec", "z_best", "logm_max",
+        ]]
 
 def load_randoms(s_z):
     randoms = np.load(local_base + "s16a_random_500k.npy")
