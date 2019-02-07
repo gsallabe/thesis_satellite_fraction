@@ -11,13 +11,13 @@ def plot_smfs(obs_smf, log_stellar_masses, sim_size):
     sim_smf = get_smf(log_stellar_masses, smf_bins, sim_size**3)
 
     fig, ax = plt.subplots()
-    l = ax.errorbar(obs_smf["logm_mean"], obs_smf["smf"], yerr=obs_smf["smf_err"], label="HSC")
-    ax.scatter(obs_smf["logm_mean"], obs_smf["smf_low"], color=l[0].get_color())
-    ax.scatter(obs_smf["logm_mean"], obs_smf["smf_upp"], color=l[0].get_color())
+    ax.plot(smf_centers, sim_smf, label="Model", marker=".", zorder=100)
 
-    ax.set(yscale="log")#, ylim=(np.min(obs_smf["smf_low"]), np.max(obs_smf["smf_upp"])))
+    yerr = np.vstack((obs_smf["smf"] - obs_smf["smf_low"], obs_smf["smf_upp"] - obs_smf["smf"]))
+    ax.errorbar(obs_smf["logm_mean"], obs_smf["smf"], yerr=yerr, label="HSC")
 
-    ax.plot(smf_centers, sim_smf, label="Sim", marker=".")
+    ax.set(yscale="log", ylabel=r"d$N$/d\,log $M_{\ast}$ [${\rm Mpc^{-3} dex^{-1}}$]", xlabel=r"${\rm log}(M_{\ast} / M_{\odot})$")
+
     ax.legend()
 
     return fig, ax

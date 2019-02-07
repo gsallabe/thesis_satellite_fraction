@@ -3,6 +3,7 @@
 import numpy as np
 from get_sm_for_sim import get_sm_for_sim, get_smf
 import clustering as c
+import sat_fraction
 
 def compute_smf_chi2(obs_smf, sim_smf):
     assert len(obs_smf) == len(sim_smf)
@@ -21,15 +22,19 @@ def compute_smf_chi2(obs_smf, sim_smf):
     return chi2
 
 def compute_chi2(
-        params,         # The position in parameter space
-        sim_data,       # The halos
-        obs_smf,        # HSC SMF
-        obs_clust,      # HSC clustering
-        sim_size,       # Length of each side in the sim
-        sim_photo_z_f,  # Function that gives % chance of specz
-        cen_sat_div,
-        x_field,
+        params,             # The position in parameter space
+        sim_data,           # The halo catalog
+        obs_smf,            # HSC SMF
+        obs_clust,          # HSC clustering
+        sim_size,           # Length of each side in the sim
+        sim_photo_z_f,      # Function that gives % chance of specz
+        cen_sat_div,        # Stellar masses around which we want to do clustering
+        x_field,            # Field in the halo catalog used to calculate stellar mass from
+        extra_params=None,  # Any extra params. Useful if you only want to MCMC over a subset of the params
 ):
+    if extra_params is not None:
+        params = _sub_extra_params(params, extra_params)
+
     log_stellar_masses = get_sm_for_sim(sim_data, params[:5], params[5:], x_field)
 
     sim_clust = np.array(
@@ -48,16 +53,17 @@ def compute_chi2(
             sim_size**3,
     )
 
-    return compute_smf_chi2(obs_smf, sim_smf) + clust_chi2
+    chi2 = compute_smf_chi2(obs_smf, sim_smf) + clust_chi2
 
+    return chi2
+
+# A wrapper around compute_chi2 that allows runs good locations in param space multiple time to reduce variance
+# from the addition of scatter in the SMHM relation.
 def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, sim_photo_z_f, cen_sat_div, x_field, n, extra_params=None):
-    if extra_params is not None:
-        params = _sub_extra_params(params, extra_params)
-
     chi2 = []
     for _ in range(n):
         chi2.append(compute_chi2(
-            params, sim_data, obs_smf, obs_clust, sim_size, sim_photo_z_f, cen_sat_div, x_field,
+            params, sim_data, obs_smf, obs_clust, sim_size, sim_photo_z_f, cen_sat_div, x_field, extra_params,
         ))
         # We don't need to repro terrible points
         if np.mean(chi2) > 5:
@@ -74,6 +80,9 @@ def _sub_extra_params(params, extra_params):
         p = np.array(params)
     else:
         p = np.copy(params)
+
+    if extra_params is None:
+        return p
 
     for loc, val in extra_params.items():
         p = np.insert(p, loc, val)

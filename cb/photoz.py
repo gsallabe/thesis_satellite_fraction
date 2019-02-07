@@ -23,13 +23,15 @@ def get_fraction(plot=False):
             # These are true spec-z
             (s["z_source"] == b"z_gama") |
             (s["z_source"] == b"z_hsc") |
-            (s["z_source"] == b"z_sdss") |
-            # These are photo-z but with spec-z accuracy
-            (s["z_source"] == b"z_camira_cen") |
-            (s["z_source"] == b"z_redmapper_cen")
+            (s["z_source"] == b"z_sdss")
         ])
         photoz = np.count_nonzero(s[
+            # While these have better accuracy than straight photo-z (because they use info
+            # from nearby galaxies) they are still not as good as spec-z
+            (s["z_source"] == b"z_camira_cen") |
+            (s["z_source"] == b"z_redmapper_cen") |
             (s["z_source"] == b"z_camira_mem") |
+            # Actual photo-z
             (s["z_source"] == b"z_franken")
         ])
 

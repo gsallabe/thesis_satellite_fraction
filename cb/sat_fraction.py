@@ -17,9 +17,9 @@ def mock(cens, sats, bins):
 # This is for the runtime mock
 def runtime_mock(log_stellar_masses, upid, bins):
     sats_counts, _, _ = scipy.stats.binned_statistic(
-            log_stellar_masses[upid != -1], None, statistic="count", bins=10**bins)
+            log_stellar_masses[upid != -1], None, statistic="count", bins=bins)
     cens_counts, _, _ = scipy.stats.binned_statistic(
-            log_stellar_masses[upid == -1], None, statistic="count", bins=10**bins)
+            log_stellar_masses[upid == -1], None, statistic="count", bins=bins)
 
     sat_frac = sats_counts / (cens_counts + sats_counts)
 

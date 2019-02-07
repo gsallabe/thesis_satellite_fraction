@@ -3,12 +3,28 @@
 \usecolortheme{default}
 \usepackage{macros}
 
+\AtBeginSection[]{
+\begin{frame}
+    \frametitle{}
+    \tableofcontents[currentsection]
+\end{frame}
+}
+
 
 \begin{document}
+
+
+\begin{frame}
+    \frametitle{}
+    \tableofcontents
+\end{frame}
+
+
+\section{Constrain the satellite fraction in HSC}
 \begin{frame}
     \frametitle{Overview}
     \begin{block}{Goal}
-        Constrain the high mass ($\FullMstar{} \gtrsim{} 11.5$) satellite fraction (\fsat{}) in Hyper Suprime-Cam (HSC) observations.
+        Constrain the high mass ($\FullMstar{} \gtrsim{} 11.5$) satellite fraction (\fsat{}) in Hyper Suprime-Cam (HSC) observations. Why HSC? Large volume -- more massive galaxies, deep images -- better \Mstar{}.
     \end{block}
 
     \begin{block}{How}
@@ -33,7 +49,8 @@
     \begin{block}{Hyper Suprime Cam}
         \begin{itemize}
             \item $\sim{}$4500, 30 $\FullMstar > 11.5,\ 12$
-            \item $z \sim{} 0.3$ (check)
+            \item $z \sim{} 0.3$
+            \item $\sim$ 95\% spec-z.
         \end{itemize}
     \end{block}
 
@@ -57,18 +74,39 @@
     \end{block}
 
     \begin{block}{Functional form}
-        We use Behroozi + halo mass dependent scatter (linear). Other options were an HOD, abundance matching.
+        We use the 5 parameter form from Behroozi 2010 (though only 3 are needed), and a linear scatter -- $\sigma({\rm halo\, property})$.
     \end{block}
 
     \begin{block}{Fitting Data}
         \begin{itemize}
             \item The SMF
-            \item Counts in cylinders: $\xi(r_p, r_{\pi})$ in a single $r$ ($< 1\Mpc$) and $\pi$ ($< 10\Mpc$) bin. HSC doesn't have enough data for a more detailed measurement of clustering. This is a cross correlation between galaxies $\FullMstar > M$ and $M - 0.1 < \FullMstar < M$ for a couple of $M$.
+            \item Counts in cylinders: $\xi(r_p, r_{\pi})$ in a single $r_p < 1\,\Mpc$ and $r_{\pi} < 10\,\Mpc$ bin. HSC doesn't have enough data for a more detailed measurement of clustering. This is a cross correlation between galaxies $\FullMstar > M_{cut}$ and $M_{cut} - 0.1 < \FullMstar < M_{cut}$.
         \end{itemize}
     \end{block}
 
 \end{frame}
 
+\begin{frame}
+    \frametitle{Fits with \Mhalo{}}
+
+    \begin{columns}
+    \column{0.5\textwidth}
+
+    \begin{block}{SMF}
+        \begin{figure}
+        \includegraphics[width=\textwidth]{images/fit_smf_mhalo.png}
+        \end{figure}
+    \end{block}
+
+
+    \column{0.5\textwidth}
+    \begin{block}{Clustering}
+        \begin{figure}
+        \includegraphics[width=\textwidth]{images/fit_clust_mhalo.png}
+        \end{figure}
+    \end{block}
+    \end{columns}
+\end{frame}
 
 \begin{frame}
     \frametitle{Bestfit Models 1: SMF}
@@ -92,8 +130,6 @@
     \end{columns}
 
 \end{frame}
-
-
 
 \begin{frame}
     \frametitle{Bestfit Models 2: Clustering}
@@ -122,27 +158,48 @@
 
     \begin{figure}
     \includegraphics[width=0.9\textwidth]{images/sat_frac.png}
-    \caption{Error bars show only the statistical error in all cases except Reddick+ 2013.}
+    \caption{Errors on the UM are statistical from the bestfit. Errors on our mocks include the uncertainty of the parameters.}
     \end{figure}
 \end{frame}
+
+
+
+\section{Looking forward to DESI}
+
+\begin{frame}
+    \frametitle{Modelling RSD in DESI with the UM?}
+\end{frame}
+
+\begin{frame}
+    \frametitle{UM Parameters}
+    \begin{figure}
+    \includegraphics[width=\textwidth]{other_images/um_params.png}
+    \end{figure}
+\end{frame}
+
+
+
+
 
 \begin{frame}
     \frametitle{Questions}
     \begin{itemize}
-        \item I don't use any covariances in my best fit. This is certainly wrong though unclear how important?
-        \item Auto vs cross correlation in the counts in cells stage?
-        \item We assumed all have specz in the model. In HSC ~5\% photoz.
+        \item{Thoughts about the incompatible \fsat{} in seemingly reasonably models?}
+        \item{Can we use X-ray observations to measure \fsat{} in observations?}
+        \item{Are there other ways in which centrals can be distinguished from satellites? Shape, orientation, something else?}
+        \item{N-body resolution requirements for the UM to do RSD?}
+        \item{How many UM params can be cut?}
     \end{itemize}
 \end{frame}
 
 
 \end{document}
 
+% \item I don't use any covariances in my best fit. This is certainly wrong though unclear how important? Not important in SMF.
+%       Should use auto rather than cross correlation to minimize in clustering.
 
-Why after goal on first slide. HSC = large vol for massive gals. Deep images - better Mstar
 Better label/legends in fsat plot
 understand the redick model
-do auto rather than cross correlation
 
 New way sof modelling RSD with DESI. after best fit - RSD with desi. Can we use UM to model RSD.
 
@@ -150,7 +207,3 @@ UM params (big list).
 Which ones can we remove. (see google doc)
 * Resolution requirements
 * Number of params, what can be cut
-
-
-Think about whether we can use Xray data to constrain fsat in obs
-Are there other ways in which centrals are different
