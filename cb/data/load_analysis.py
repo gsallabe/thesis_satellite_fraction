@@ -5,20 +5,21 @@ from astropy.io import fits
 
 import pandas as pd
 
-def load_mock(fname, complete_cut):
+def load_mock(fname, complete_cut, plot_completeness=False):
     sim_data = np.load(fname)
 
     sats = sim_data[sim_data["upid"] != -1]
     cens = sim_data[sim_data["upid"] == -1]
     assert len(sim_data) == len(sats) + len(cens)
 
-    # _plot_completeness(cens, complete_cut)
+    if plot_completeness:
+        _plot_completeness(cens, complete_cut)
 
     cens_complete = cens[cens["stellar_mass"] > complete_cut]
     sats_complete = sats[sats["stellar_mass"] > complete_cut]
     sim_data_complete = sim_data[sim_data["stellar_mass"] > complete_cut]
 
-    return sim_data_complete, cens_complete, sats_complete, 1000
+    return sim_data, cens, sats, sim_data_complete, cens_complete, sats_complete, 1000
 
 def load_asap_um(fname, complete_cut):
     sim_data = fits.open(fname)

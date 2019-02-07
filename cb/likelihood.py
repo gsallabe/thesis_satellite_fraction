@@ -21,6 +21,7 @@ def compute_smf_chi2(obs_smf, sim_smf):
         )
     return chi2
 
+# Compute the chi2 for this position in parameter space.
 def compute_chi2(
         params,             # The position in parameter space
         sim_data,           # The halo catalog
@@ -46,7 +47,7 @@ def compute_chi2(
     clust_chi2 = np.sum(np.power(clust_delta / clust_delta_err, 2))
 
     # We don't need the error on the sim_smf because it will be a lot smaller than on the observations
-    # We didn't really need it on the clustering either but it doesn't cost anything...
+    # We didn't really need it on the clustering either but it didn't cost anything there...
     sim_smf = get_smf(
             log_stellar_masses,
             np.append(obs_smf["logm_0"], obs_smf["logm_1"][-1]),
@@ -57,8 +58,8 @@ def compute_chi2(
 
     return chi2
 
-# A wrapper around compute_chi2 that allows runs good locations in param space multiple time to reduce variance
-# from the addition of scatter in the SMHM relation.
+# A wrapper around compute_chi2 that repeats runs in good locations multiple time to reduce variance from the
+# stochasticity of stellar mass (scatter) and redshift (photoz) estimates.
 def compute_chi2_n(params, sim_data, obs_smf, obs_clust, sim_size, sim_photo_z_f, cen_sat_div, x_field, n, extra_params=None):
     chi2 = []
     for _ in range(n):

@@ -5,8 +5,9 @@ import scipy
 
 import smhm_fit
 
-# Given the b_params for the behroozi functional form, and the halos in the sim
-# find the SM for each halo
+# Given the 5 params for the behroozi functional form (b_params), the 2 params
+# for the scatter (s_params), and the simulation data + the halo property to compute
+# stellar mass from. Return the stellar masses
 def get_sm_for_sim(sim_data, b_params, s_params, x_field, sanity=False):
     assert len(b_params) == 5 and len(s_params) == 2
 

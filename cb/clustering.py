@@ -16,18 +16,21 @@ memory = Memory((os.path.dirname(__file__) or ".") + "/joblib_cache", verbose=2)
 import data as d
 
 def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_sat_div, sim_photo_z_f=None):
+    # Sample 1 is galaxies above the cut
     c1 = log_stellar_masses > cen_sat_div
     s1 = sim_data[c1]
     lsm1 = log_stellar_masses[c1]
 
+    # Sample 2 is galaxies just below the cut
     c2 = (log_stellar_masses < cen_sat_div) & (log_stellar_masses > (cen_sat_div - 0.1))
     s2 = sim_data[c2]
     lsm2 = log_stellar_masses[c2]
+
+    # If either of these samples are empty, the clustering is 0 with ~no error
     if len(s1) == 0 or len(s2) == 0:
         return 0, 1e-9
 
-    aRSD = True
-    dd = _squash(sim_clustering(s1, s2, sim_size, sim_photo_z_f, lsm1, lsm2, applyRSD1=aRSD, applyRSD2=aRSD))
+    dd = _squash(sim_clustering(s1, s2, sim_size, sim_photo_z_f, lsm1, lsm2, applyRSD=True))
     assert len(dd) == 1
 
     random_len = max(len(s1), len(s2)) * 1000
@@ -40,43 +43,38 @@ def compute_sim_clustering(sim_data, sim_size, log_stellar_masses, cen_sat_div, 
 
     return sim_clust[0], np.abs(sim_clust_w_err[0] - sim_clust[0])
 
+# As this is a simulation (very simple geometry, no masks) RR and DR can be computed analytically.
+# We do this because it is MUCH faster than doing this numerically.
 def predict_counts(sim_size, s1, s2, random_len, pimax=10, rmax=1):
-    v_cyl = np.pi * rmax**2 * (pimax * 2)
-    frac_one_cyl = v_cyl / sim_size**3
+    cylinder_volume = np.pi * rmax**2 * (pimax * 2)
+    frac_one_cyl = cylinder_volume / sim_size**3
 
+    # This is the format that corrfunc returns its clustering in. Mimic it
     like_cf = lambda x: np.array([x], dtype=[("npairs", "f8")])
-    # dr
+
+    # dr - number of r2s in s1's cylinders
     dr = like_cf((frac_one_cyl * len(s1)) * random_len)
 
-    # rd
+    # rd - number of s2s in r1's cylinders
     rd = like_cf((frac_one_cyl * random_len) * len(s2))
 
-    # RR - the number of r2 in r1's cylinder
+    # RR - number of r2s in r1's cylinder
     rr = like_cf((frac_one_cyl * random_len) * random_len)
 
     return dr, rd, rr
 
-def sim_clustering(s1, s2, sim_size, sim_photo_z_f=None, lsm1=None, lsm2=None, applyRSD1=False, applyRSD2=False, test=False):
-    z1 = s1["halo_z"]
-    if applyRSD1:
+def sim_clustering(s1, s2, sim_size, sim_photo_z_f=None, lsm1=None, lsm2=None, applyRSD=False, test=False):
+    z1, z2 = s1["halo_z"], s2["halo_z"]
+    # Optionally apply RSD to both samples
+    if applyRSD:
         z1 = halotools.mock_observables.apply_zspace_distortion(
-                s1["halo_z"],
-                s1["vz"],
-                0.35,
-                astropy.cosmology.Planck15,
-                sim_size,
+                s1["halo_z"], s1["vz"], 0.35, astropy.cosmology.Planck15, sim_size,
         )
-
-    z2 = s2["halo_z"]
-    if applyRSD2:
         z2 = halotools.mock_observables.apply_zspace_distortion(
-                s2["halo_z"],
-                s2["vz"],
-                0.35,
-                astropy.cosmology.Planck15,
-                sim_size,
+                s2["halo_z"], s2["vz"], 0.35, astropy.cosmology.Planck15, sim_size,
         )
 
+    # Optionally apply a photoz peturbation to both samples
     if sim_photo_z_f:
         photoz_unc = 50
         for (z, s, lsm) in [(z1, s1, lsm1), (z2, s2, lsm2)]:
@@ -117,7 +115,7 @@ def sim_clustering(s1, s2, sim_size, sim_photo_z_f=None, lsm1=None, lsm2=None, a
 # Compute clustering (for some definition of clustering encoded in this function)
 @memory.cache()
 def compute_hsc_clustering(gals, cen_sat_div):
-    s1 = gals[gals["logm_max"] > cen_sat_div] # Centrals
+    s1 = gals[gals["logm_max"] > cen_sat_div]
     s2 = gals[
         (gals["logm_max"] < cen_sat_div) & (gals["logm_max"] > (cen_sat_div - 0.1))
     ]
@@ -134,7 +132,7 @@ def compute_hsc_clustering(gals, cen_sat_div):
     r2 = r2[r_div[len(r_div) // 2:]]
     assert len(r1) == len(r2)
 
-    # Sqaush because we don't care about having it in 10 pi bins. We just want the summary
+    # squash because we don't care about having it in 10 pi bins. We just want the summary
     dd = _squash(obs_clustering(s1, s2))
     dr = _squash(obs_clustering(s1, r2))
     rd = _squash(obs_clustering(r1, s2))
@@ -156,7 +154,7 @@ def obs_clustering(s1, s2, test=False):
     cosmo = cosmology.setCosmology("planck18")
     res = DDrppi_mocks(
             autocorr=False,
-            cosmology=1, # This is ignored as is_comoving_dist == True and we convert z to Mpc/h
+            cosmology=1, # This is ignored as `is_comoving_dist == True` and we convert z to Mpc/h
             nthreads=12,
             pimax=10, # We get this back in 10 bins
             binfile=np.linspace(0.000001, 1, num=2), # Just 1 bin out to 1 Mpc/h
@@ -178,7 +176,7 @@ def obs_clustering(s1, s2, test=False):
 
 # My artisinal, handrolled correlation function for observations.
 # Only used to check that I am calling corrfunc correctly
-# And used in the obs part
+# Slow as $&%*
 def handrolled_obs_clustering(s1, s2):
     cnts = 0
     cosmo = cosmology.setCosmology("planck18")
@@ -199,7 +197,7 @@ def handrolled_obs_clustering(s1, s2):
     return cnts, indexes
 
 
-# We get dd along the pi direction. Square into a single bin
+# Corrfunc returns data binned each Mpc along the pi direction. We don't need that - we just want the summary.
 def _squash(dd):
     dd[0]["npairs"] = np.sum(dd["npairs"])
     return dd[:1]
@@ -208,39 +206,3 @@ def _squash(dd):
 def _add_poisson_err(dd):
     dd[0]["npairs"] += np.sqrt(dd[0]["npairs"])
     return dd
-
-def analysis_obs_clustering(gals, cen_sat_div):
-    s1 = gals[gals["logm_max"] > cen_sat_div] # Centrals
-    s2 = gals[
-        (gals["logm_max"] < cen_sat_div) & (gals["logm_max"] > (cen_sat_div - 0.01))
-    ]
-
-    cnts, indexes = handrolled_obs_clustering(s1, s2)
-    assert cnts == np.sum(obs_clustering(s1, s2)["npairs"])
-    return indexes, s2["logm_max"]
-
-
-def analysis_sim_clustering(sim_data, cen_sat_div, sim_size):
-    s1 = sim_data[sim_data["stellar_mass"] > 10**cen_sat_div]
-    s2 = sim_data[
-            (sim_data["stellar_mass"] < 10**cen_sat_div) &
-            (sim_data["stellar_mass"] > 10**(cen_sat_div - 0.01))
-    ]
-    assert not np.may_share_memory(s1, sim_data)
-
-    s1["halo_z"] = halotools.mock_observables.apply_zspace_distortion(
-            s1["halo_z"], s1["vz"], 0.35, astropy.cosmology.Planck15, sim_size,
-    )
-    s2["halo_z"] = halotools.mock_observables.apply_zspace_distortion(
-            s2["halo_z"], s2["vz"], 0.35, astropy.cosmology.Planck15, sim_size,
-    )
-
-    _, indexes = halotools.mock_observables.counts_in_cylinders(
-            np.copy(s1)[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),#s1_pos,
-            np.copy(s2)[["halo_x", "halo_y", "halo_z"]].view((np.float64, 3)),#s2_pos,
-            proj_search_radius=1,
-            cylinder_half_length=10,
-            period=sim_size,
-            return_indexes=True,
-    )
-    return indexes, s2["stellar_mass"]
