@@ -1,11 +1,15 @@
 \ProvidesPackage{macros}
 
 \newcommand{\Mhalo}{\ensuremath{M_{\rm halo}}}
-\newcommand{\MhaloPeak}{\ensuremath{M_{\rm halo, peak}}}
-\newcommand{\vmp}{\ensuremath{V_{\rm max}@M_{\rm peak}}}
+\newcommand{\MhaloPeak}{\ensuremath{M_{\rm peak}}}
+\newcommand{\vmax}{\ensuremath{V_{\rm max}}}
+\newcommand{\vmp}{\ensuremath{\vmax{}@\MhaloPeak{}}}
+
 \newcommand{\Mstar}{\ensuremath{M_{\ast}}}
 \newcommand{\Msol}{\mbox{$M_{\odot}$}}
+
 \newcommand{\FullMstar}{\ensuremath{\tlog{}(\Mstar{} / \Msol{})}}
+\newcommand{\FullMhalo}{\ensuremath{\tlog{}(\Mhalo{} / \Msol{})}}
 
 \newcommand{\M}[1]{\ensuremath{M_{\ast,\,\rm #1}}}
 
@@ -15,4 +19,5 @@
 \newcommand{\tlogten}{{\rm log}_{10}}
 \newcommand{\tlog}{{\rm log}}
 \newcommand{\Mpc}{{\rm Mpc}}
+\newcommand{\Gpc}{{\rm Gpc}}
 \newcommand{\h}{{\rm h^{-1}}}

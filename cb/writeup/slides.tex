@@ -17,6 +17,7 @@
 \begin{frame}
     \frametitle{}
     \tableofcontents
+    Christopher Bradshaw, Greg Sallaberry, Marie Wingyee Lau, Song Huang
 \end{frame}
 
 
@@ -48,17 +49,20 @@
     \column{0.5\textwidth}
     \begin{block}{Hyper Suprime Cam}
         \begin{itemize}
+            \item Eventually -- 1400 deg\textsuperscript{2}, 5$\sigma$ detection to $r \approx 26$ (point sources).
+            \item Data here -- 230 deg\textsuperscript{2}, $0.25 < z < 0.45$.
             \item $\sim{}$4500, 30 $\FullMstar > 11.5,\ 12$
-            \item $z \sim{} 0.3$
             \item $\sim$ 95\% spec-z.
         \end{itemize}
     \end{block}
 
     \column{0.5\textwidth}
-    \begin{block}{MDPL}
+    \begin{block}{MDPL2}
         \begin{itemize}
-            \item 1000 $\Mpc{}\, \h{}$
+            \item 1 $\Gpc{}\, \h{}$ per side
+            \item Volume 40x current HSC
             \item Snapshot at $z \sim{} 0.37$
+            \item $m_p = 1.5 \times 10^{9} \Msol \h$
         \end{itemize}
     \end{block}
 
@@ -162,33 +166,59 @@
     \end{figure}
 \end{frame}
 
-
-
-\section{Looking forward to DESI}
-
 \begin{frame}
-    \frametitle{Modelling RSD in DESI with the UM?}
+    \frametitle{Questions}
+    \begin{itemize}
+        \item{Can we use X-ray observations to measure \fsat{} in observations?}
+        \item{Are there other ways in which centrals can be distinguished from satellites? Shape, orientation, something else?}
+    \end{itemize}
 \end{frame}
 
+
+\section{Modelling RSD in DESI}
 \begin{frame}
-    \frametitle{UM Parameters}
+    \frametitle{Modelling RSD in DESI with the Universe Machine?}
+
+    \begin{block}{The Universe Machine (UM)}
+        \begin{itemize}
+            \item{Semi-empirical model that computes $SFR(\vmax{}, z, \dot{V}_{\rm max})$}
+            \item{Fits many observations: SMF, clustering, CSFR, etc}
+        \end{itemize}
+    \end{block}
+
     \begin{figure}
-    \includegraphics[width=\textwidth]{other_images/um_params.png}
+    \includegraphics[width=0.9\textwidth]{other_images/um_params.png}
     \end{figure}
 \end{frame}
 
+\begin{frame}
+    \frametitle{Parameter Reduction?}
 
+    Currently there is huge amount of flexibility in the UM model that we might not need, particularly in SFR at high $z$ and in quenching physics.
 
+    Peter estimates that $10-15$ params could be removed in those areas.
+\end{frame}
+
+\begin{frame}
+    \frametitle{Resolution Requirements}
+
+    We need to resolve the satellites that build up the large centrals.
+
+    Rodriguez-Gomez estimates that the bulk of $\FullMstar > 11.4$ galaxies comes from $\FullMstar > 10.4$ (that mostly grow from in-situ star formation).
+
+    90\% of these galaxies are in halos with $\FullMhalo > 11.5$ at $z = 0$. However these need to be tracked at higher redshifts. Peter estimates that the UM needs to resolve $\FullMhalo > 10.5$.
+
+    What $m_p$ can we use?
+
+\end{frame}
 
 
 \begin{frame}
     \frametitle{Questions}
     \begin{itemize}
-        \item{Thoughts about the incompatible \fsat{} in seemingly reasonably models?}
-        \item{Can we use X-ray observations to measure \fsat{} in observations?}
-        \item{Are there other ways in which centrals can be distinguished from satellites? Shape, orientation, something else?}
         \item{N-body resolution requirements for the UM to do RSD?}
         \item{How many UM params can be cut?}
+        \item{Baryonic effects?}
     \end{itemize}
 \end{frame}
 
