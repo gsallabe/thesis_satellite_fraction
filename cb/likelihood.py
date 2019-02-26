@@ -15,6 +15,7 @@ def compute_smf_chi2(obs_smf, sim_smf):
         else:
             err = np.abs(obs_smf["smf"][i] - obs_smf["smf_upp"][i])
 
+        # This is wrong...
         chi2 += np.power(
                 (obs_smf["smf"][i] - sim_smf[i]) / err,
                 2
@@ -44,7 +45,7 @@ def compute_chi2(
 
     clust_delta = np.abs(sim_clust["clustering"] - obs_clust["clustering"])
     clust_delta_err = np.sqrt(sim_clust["err"]**2 + obs_clust["err"]**2)
-    clust_chi2 = np.sum(np.power(clust_delta / clust_delta_err, 2))
+    clust_chi2 = np.sum(np.power(clust_delta / clust_delta_err, 2)) # this is wrong...
 
     # We don't need the error on the sim_smf because it will be a lot smaller than on the observations
     # We didn't really need it on the clustering either but it didn't cost anything there...
