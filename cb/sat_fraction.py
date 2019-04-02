@@ -28,7 +28,6 @@ def runtime_mock(log_stellar_masses, upid, bins):
 
 # Fig 13 from https://arxiv.org/pdf/1207.2160.pdf
 def reddick():
-
     # They are using are M/h^2. Assume h ~ 0.7
     bins = np.linspace(10.9, 11.9, num=6)
     bins = np.log10(10**bins / (0.7**2))
@@ -52,6 +51,16 @@ def saito():
 
 def reid():
     return 11.4, 0.10, 0.1, 0.005
+
+
+# kast_obserations, March 4th
+# https://redwoodforest.slack.com/archives/C65QE1SSK/p1551730251047800
+def greg_XMM():
+    sat_frac = [0.14, 0.08, 0.08, 0.04, 0, 0]
+    sat_frac_unc = [0.02, 0.02, 0.025, 0.03, 0, 0]
+    bins = np.linspace(11.45, 11.95, num=6)
+
+    return bins, sat_frac, sat_frac_unc
 
 def ASAP_UM(cens, sats, bins):
     bins = np.log10(bins) # UM works in log space
